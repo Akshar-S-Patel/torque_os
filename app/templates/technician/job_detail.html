@@ -1,15 +1,15 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Job #{{ data.job_id }} Details - RepairOS{% endblock %}
+{% block title %}Job #{{ data.job_id }} Details - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('technician.current_jobs') }}">Current Jobs</a>
-    </li>
-    <li class="breadcrumb-item active">Job #{{ data.job_id }}</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('technician.current_jobs') }}">Current Jobs</a>
+</li>
+<li class="breadcrumb-item active">Job #{{ data.job_id }}</li>
 {% endblock %}
 
 {% block content %}
@@ -28,7 +28,8 @@
             <i class="ti ti-pencil me-2"></i>Edit Job
         </a>
         <form action="{{ url_for('technician.complete_job', job_id=data.job_id) }}" method="POST" class="d-inline">
-            <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to mark this job as completed? This action cannot be undone.')">
+            <button type="submit" class="btn btn-success"
+                onclick="return confirm('Are you sure you want to mark this job as completed? This action cannot be undone.')">
                 <i class="ti ti-circle-check me-2"></i>Mark Complete
             </button>
         </form>
@@ -73,7 +74,8 @@
             </div>
             <div class="card-body">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center">
+                    <div
+                        class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center">
                         <i class="ti ti-user text-primary"></i>
                     </div>
                     <div>
@@ -108,7 +110,8 @@
                     <i class="ti ti-calendar text-muted me-3"></i>
                     <div>
                         <small class="text-muted d-block">Job Date</small>
-                        <span class="fw-medium">{{ data.job_date.strftime('%b %d, %Y') if data.job_date else 'N/A' }}</span>
+                        <span class="fw-medium">{{ data.job_date.strftime('%b %d, %Y') if data.job_date else 'N/A'
+                            }}</span>
                     </div>
                 </div>
 
@@ -117,20 +120,20 @@
                     <div>
                         <small class="text-muted d-block">Status</small>
                         {% if data.completed %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-circle-check me-1"></i>
-                                Completed
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-circle-check me-1"></i>
+                            Completed
+                        </span>
                         {% elif data.paid %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-credit-card me-1"></i>
-                                Paid
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-credit-card me-1"></i>
+                            Paid
+                        </span>
                         {% else %}
-                            <span class="badge bg-warning">
-                                <i class="ti ti-clock me-1"></i>
-                                In Progress
-                            </span>
+                        <span class="badge bg-warning">
+                            <i class="ti ti-clock me-1"></i>
+                            In Progress
+                        </span>
                         {% endif %}
                     </div>
                 </div>
@@ -256,15 +259,15 @@
                         <span class="fs-2 fw-bold text-success">${{ "%.2f"|format(data.total_cost|float) }}</span>
                         <div class="mt-1">
                             {% if data.paid %}
-                                <span class="badge bg-success">
-                                    <i class="ti ti-circle-check me-1"></i>
-                                    Paid
-                                </span>
+                            <span class="badge bg-success">
+                                <i class="ti ti-circle-check me-1"></i>
+                                Paid
+                            </span>
                             {% else %}
-                                <span class="badge bg-warning">
-                                    <i class="ti ti-clock me-1"></i>
-                                    Unpaid
-                                </span>
+                            <span class="badge bg-warning">
+                                <i class="ti ti-clock me-1"></i>
+                                Unpaid
+                            </span>
                             {% endif %}
                         </div>
                     </div>

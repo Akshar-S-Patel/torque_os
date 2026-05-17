@@ -25,7 +25,7 @@ def main():
     debug = app.config.get('DEBUG', False)
 
     print("\n" + "=" * 60)
-    print("RepairOS")
+    print("TorqueOS")
     print("Automotive Repair Management Platform")
     print("=" * 60)
     print(f"Application URL: http://{host}:{port}")

@@ -1,45 +1,45 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Configure Services - Step 1 of 3 - RepairOS{% endblock %}
+{% block title %}Configure Services - Step 1 of 3 - TorqueOS{% endblock %}
 
 {% block breadcrumb %}{% endblock %}
 
 {% block extra_css %}
 <style>
-.onboarding-bg {
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, #e8eef5 100%);
-    min-height: 80vh;
-}
+    .onboarding-bg {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, #e8eef5 100%);
+        min-height: 80vh;
+    }
 
-.progress-bar-custom {
-    height: 6px;
-    border-radius: 3px;
-    background: #e2e8f0;
-}
+    .progress-bar-custom {
+        height: 6px;
+        border-radius: 3px;
+        background: #e2e8f0;
+    }
 
-.progress-bar-custom .progress-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--accent), #f59e0b);
-    transition: width 0.5s ease;
-}
+    .progress-bar-custom .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--accent), #f59e0b);
+        transition: width 0.5s ease;
+    }
 
-.step-indicator {
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--accent);
-}
+    .step-indicator {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
 
-.service-table th {
-    background: var(--bg-secondary);
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: var(--primary);
-}
+    .service-table th {
+        background: var(--bg-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: var(--primary);
+    }
 </style>
 {% endblock %}
 
@@ -60,11 +60,13 @@
                 <div class="card border-0 shadow-lg" style="border-top: 4px solid var(--accent) !important;">
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle p-3 mb-3">
+                            <div
+                                class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle p-3 mb-3">
                                 <i class="ti ti-tool text-primary" style="font-size: 36px;"></i>
                             </div>
                             <h1 class="h3 fw-bold mb-2">Configure Services</h1>
-                            <p class="text-muted">Review the default services and add any custom ones your shop offers. You can edit these later.</p>
+                            <p class="text-muted">Review the default services and add any custom ones your shop offers.
+                                You can edit these later.</p>
                         </div>
 
                         <!-- Current Services Table -->
@@ -82,7 +84,8 @@
                                     {% for service in services %}
                                     <tr>
                                         <td class="fw-semibold">{{ service.service_name }}</td>
-                                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ service.category }}</span></td>
+                                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{
+                                                service.category }}</span></td>
                                         <td>${{ "%.2f"|format(service.cost) }}</td>
                                         <td>{{ service.estimated_duration_minutes }} min</td>
                                     </tr>
@@ -91,7 +94,8 @@
                                     <tr id="no-services-row">
                                         <td colspan="4" class="text-center text-muted py-4">
                                             <i class="ti ti-inbox mb-2" style="font-size: 32px;"></i>
-                                            <p class="mb-0">No services added yet. Use the form below to add your first service.</p>
+                                            <p class="mb-0">No services added yet. Use the form below to add your first
+                                                service.</p>
                                         </td>
                                     </tr>
                                     {% endif %}
@@ -106,16 +110,19 @@
                                     <i class="ti ti-circle-plus me-2 text-accent"></i>
                                     Add New Service
                                 </h6>
-                                <form method="POST" action="{{ url_for('onboarding.save_step', step_number=1) }}" id="add-service-form">
+                                <form method="POST" action="{{ url_for('onboarding.save_step', step_number=1) }}"
+                                    id="add-service-form">
                                     <input type="hidden" name="action" value="add_service">
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label for="service_name" class="form-label">Service Name</label>
-                                            <input type="text" class="form-control" id="service_name" name="service_name" placeholder="e.g. Oil Change" required>
+                                            <input type="text" class="form-control" id="service_name"
+                                                name="service_name" placeholder="e.g. Oil Change" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="service_category" class="form-label">Category</label>
-                                            <select class="form-select" id="service_category" name="service_category" required>
+                                            <select class="form-select" id="service_category" name="service_category"
+                                                required>
                                                 <option value="">Select category</option>
                                                 <option value="Maintenance">Maintenance</option>
                                                 <option value="Repair">Repair</option>
@@ -127,11 +134,13 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label for="service_cost" class="form-label">Cost ($)</label>
-                                            <input type="number" class="form-control" id="service_cost" name="service_cost" min="0" step="0.01" placeholder="0.00" required>
+                                            <input type="number" class="form-control" id="service_cost"
+                                                name="service_cost" min="0" step="0.01" placeholder="0.00" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="service_duration" class="form-label">Duration (minutes)</label>
-                                            <input type="number" class="form-control" id="service_duration" name="service_duration" min="1" placeholder="e.g. 30">
+                                            <input type="number" class="form-control" id="service_duration"
+                                                name="service_duration" min="1" placeholder="e.g. 30">
                                         </div>
                                         <div class="col-12">
                                             <button type="submit" class="btn btn-primary">
@@ -146,7 +155,8 @@
 
                         <!-- Navigation -->
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('onboarding.step', step_number=2) }}" class="btn btn-link text-muted px-0">
+                            <a href="{{ url_for('onboarding.step', step_number=2) }}"
+                                class="btn btn-link text-muted px-0">
                                 Skip for now
                                 <i class="ti ti-arrow-right ms-1"></i>
                             </a>

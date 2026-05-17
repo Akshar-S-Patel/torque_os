@@ -1,56 +1,56 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Select Organization - RepairOS{% endblock %}
+{% block title %}Select Organization - TorqueOS{% endblock %}
 
 {% block breadcrumb %}{% endblock %}
 
 {% block extra_css %}
 <style>
-.tenant-bg {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e8eef5 100%);
-    min-height: 80vh;
-}
+    .tenant-bg {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e8eef5 100%);
+        min-height: 80vh;
+    }
 
-.tenant-card {
-    border: 2px solid #e2e8f0;
-    border-radius: 0.75rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
+    .tenant-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
 
-.tenant-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(30, 58, 95, 0.12);
-}
+    .tenant-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(30, 58, 95, 0.12);
+    }
 
-.tenant-card .card-body {
-    padding: 1.75rem;
-}
+    .tenant-card .card-body {
+        padding: 1.75rem;
+    }
 
-.business-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+    .business-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-.badge-auto-repair {
-    background: rgba(30, 58, 95, 0.1);
-    color: var(--primary);
-}
+    .badge-auto-repair {
+        background: rgba(30, 58, 95, 0.1);
+        color: var(--primary);
+    }
 
-.badge-parts-seller {
-    background: rgba(232, 126, 4, 0.1);
-    color: var(--accent);
-}
+    .badge-parts-seller {
+        background: rgba(232, 126, 4, 0.1);
+        color: var(--accent);
+    }
 
-.badge-both {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-}
+    .badge-both {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
 </style>
 {% endblock %}
 
@@ -61,7 +61,8 @@
             <div class="col-lg-8 col-xl-7">
                 <!-- Header -->
                 <div class="text-center mb-5">
-                    <img src="{{ url_for('static', filename='images/RepairOS-logo.svg') }}" alt="RepairOS" style="height: 64px; width: auto;" class="mb-3">
+                    <img src="{{ url_for('static', filename='images/TorqueOS-logo.svg') }}" alt="TorqueOS"
+                        style="height: 64px; width: auto;" class="mb-3">
                     <h1 class="h2 fw-bold mb-2">Select Organization</h1>
                     <p class="text-muted">Choose which organization you want to work in</p>
                 </div>
@@ -76,7 +77,8 @@
                                     <div class="rounded-circle bg-primary bg-opacity-10 p-2">
                                         <i class="ti ti-building text-primary" style="font-size: 1.5rem;"></i>
                                     </div>
-                                    <span class="business-badge {% if tenant.business_type == 'Auto Repair' %}badge-auto-repair{% elif tenant.business_type == 'Parts Seller' %}badge-parts-seller{% else %}badge-both{% endif %}">
+                                    <span
+                                        class="business-badge {% if tenant.business_type == 'Auto Repair' %}badge-auto-repair{% elif tenant.business_type == 'Parts Seller' %}badge-parts-seller{% else %}badge-both{% endif %}">
                                         {{ tenant.business_type }}
                                     </span>
                                 </div>

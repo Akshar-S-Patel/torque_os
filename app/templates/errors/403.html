@@ -1,6 +1,6 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Access Denied - RepairOS{% endblock %}
+{% block title %}Access Denied - TorqueOS{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -17,16 +17,16 @@
                     <div class="empty-action">
                         <div class="d-flex gap-3 justify-content-center flex-wrap">
                             {% if session.logged_in %}
-                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
-                                    <i class="ti ti-layout-dashboard me-2"></i>Back to Dashboard
-                                </a>
-                                <a href="{{ url_for('main.logout') }}" class="btn btn-outline-warning">
-                                    <i class="ti ti-logout me-2"></i>Switch Account
-                                </a>
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                                <i class="ti ti-layout-dashboard me-2"></i>Back to Dashboard
+                            </a>
+                            <a href="{{ url_for('main.logout') }}" class="btn btn-outline-warning">
+                                <i class="ti ti-logout me-2"></i>Switch Account
+                            </a>
                             {% else %}
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
-                                    <i class="ti ti-login me-2"></i>Login to System
-                                </a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                                <i class="ti ti-login me-2"></i>Login to System
+                            </a>
                             {% endif %}
                             <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
                                 <i class="ti ti-home me-2"></i>Back to Home

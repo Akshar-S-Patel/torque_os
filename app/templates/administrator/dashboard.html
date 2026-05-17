@@ -1,5 +1,5 @@
 {% extends "base/layout_with_sidebar.html" %}
-{% block title %}Admin Dashboard - RepairOS{% endblock %}
+{% block title %}Admin Dashboard - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
 <li class="breadcrumb-item active">Dashboard</li>
@@ -80,7 +80,8 @@
     <div class="row mb-4">
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
+                <div class="card-header"
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
                     <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
                         <i class="ti ti-chart-bar"></i>
                         Monthly Revenue
@@ -110,7 +111,8 @@
     <div class="row">
         <div class="col-lg-7">
             <div class="card">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
+                <div class="card-header"
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
                     <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
                         <i class="ti ti-activity"></i>
                         Recent Activity
@@ -126,7 +128,8 @@
                             </div>
                             <div class="flex-grow-1">
                                 <div class="fw-semibold">Job #{{ job.job_id }}</div>
-                                <small class="text-muted">{{ job.first_name }} {{ job.family_name }} &mdash; {{ job.job_date }}</small>
+                                <small class="text-muted">{{ job.first_name }} {{ job.family_name }} &mdash; {{
+                                    job.job_date }}</small>
                             </div>
                             <div>
                                 {% if job.completed == 1 %}
@@ -175,7 +178,8 @@
                                     <small class="text-muted">Job #{{ bill.job_id }}</small>
                                 </div>
                             </div>
-                            <span class="fw-bold text-danger">${{ "%.2f"|format(bill.total_cost|default(0)|float) }}</span>
+                            <span class="fw-bold text-danger">${{ "%.2f"|format(bill.total_cost|default(0)|float)
+                                }}</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -194,31 +198,33 @@
 
 {% block admin_extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Monthly Revenue Bar Chart
-    const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
-        new Chart(revenueCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Revenue ($)',
-                    data: {{ billing_stats.monthly_revenue|default([0,0,0,0,0,0,0,0,0,0,0,0])|tojson }},
-                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
-                    borderColor: 'rgba(37, 99, 235, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6
+    document.addEventListener('DOMContentLoaded', function () {
+        // Monthly Revenue Bar Chart
+        const revenueCtx = document.getElementById('revenueChart');
+        if (revenueCtx) {
+            new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: {{ billing_stats.monthly_revenue |default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) | tojson
+        }
+    },
+        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+        borderColor: 'rgba(37, 99, 235, 1)',
+        borderWidth: 1,
+        borderRadius: 6
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { callback: function(v) { return '$' + v; } } }
-                }
-            }
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { callback: function (v) { return '$' + v; } } }
+        }
+    }
         });
     }
 
@@ -231,20 +237,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: ['Completed', 'In Progress', 'Pending'],
                 datasets: [{
                     data: [
-                        {{ job_stats.completed|default(0) }},
-                        {{ job_stats.in_progress|default(0) }},
-                        {{ job_stats.pending|default(0) }}
+                        {{ job_stats.completed |default(0) }},
+                {{ job_stats.in_progress |default(0) }},
+                        {{ job_stats.pending |default(0) }}
                     ],
-                    backgroundColor: ['#16a34a', '#f59e0b', '#6b7280'],
-                    borderWidth: 0
+    backgroundColor: ['#16a34a', '#f59e0b', '#6b7280'],
+        borderWidth: 0
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
                 plugins: { legend: { position: 'bottom' } },
-                cutout: '65%'
-            }
+        cutout: '65%'
+    }
         });
     }
 });

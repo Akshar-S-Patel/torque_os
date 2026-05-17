@@ -1,6 +1,6 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Completing Sign In - RepairOS{% endblock %}
+{% block title %}Completing Sign In - TorqueOS{% endblock %}
 
 {% block breadcrumb %}{% endblock %}
 
@@ -30,69 +30,69 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
-    const statusTitle = document.getElementById('statusTitle');
-    const statusMessage = document.getElementById('statusMessage');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const errorActions = document.getElementById('errorActions');
+    document.addEventListener('DOMContentLoaded', async function () {
+        const statusTitle = document.getElementById('statusTitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorActions = document.getElementById('errorActions');
 
-    function showError(message) {
-        loadingSpinner.classList.add('d-none');
-        statusTitle.textContent = 'Sign in failed';
-        statusMessage.textContent = message;
-        errorActions.classList.remove('d-none');
-    }
+        function showError(message) {
+            loadingSpinner.classList.add('d-none');
+            statusTitle.textContent = 'Sign in failed';
+            statusMessage.textContent = message;
+            errorActions.classList.remove('d-none');
+        }
 
-    if (!window.neonAuth) {
-        showError('Authentication service not configured. Please try again.');
-        return;
-    }
-
-    // Check if neonAuth.checkSessionVerifier already handled the redirect
-    // (it runs on DOMContentLoaded too, but this page is specifically for the bridge flow)
-    const params = new URLSearchParams(window.location.search);
-    const verifier = params.get('neon_auth_session_verifier');
-
-    // If there's a verifier, checkSessionVerifier in neon-auth.js will handle it.
-    // Only proceed here if there's no verifier (this is the /auth/callback bridge).
-    if (verifier) {
-        // Let checkSessionVerifier handle it — just wait
-        return;
-    }
-
-    try {
-        // Get session from Neon Auth (client-side cookies are visible to Neon Auth domain)
-        const sessionData = await window.neonAuth.getSession();
-        const token = sessionData ? (sessionData.token || null) : null;
-
-        if (!sessionData) {
-            showError('Could not retrieve session. Please sign in again.');
+        if (!window.neonAuth) {
+            showError('Authentication service not configured. Please try again.');
             return;
         }
 
-        // Forward token to Flask backend
-        const payload = {};
-        if (token) {
-            payload.token = token;
+        // Check if neonAuth.checkSessionVerifier already handled the redirect
+        // (it runs on DOMContentLoaded too, but this page is specifically for the bridge flow)
+        const params = new URLSearchParams(window.location.search);
+        const verifier = params.get('neon_auth_session_verifier');
+
+        // If there's a verifier, checkSessionVerifier in neon-auth.js will handle it.
+        // Only proceed here if there's no verifier (this is the /auth/callback bridge).
+        if (verifier) {
+            // Let checkSessionVerifier handle it — just wait
+            return;
         }
 
-        const response = await fetch('/auth/neon-callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            credentials: 'include'
-        });
+        try {
+            // Get session from Neon Auth (client-side cookies are visible to Neon Auth domain)
+            const sessionData = await window.neonAuth.getSession();
+            const token = sessionData ? (sessionData.token || null) : null;
 
-        if (response.ok) {
-            const data = await response.json();
-            window.location.href = data.redirect || '/dashboard';
-        } else {
-            showError('Could not establish session. Please sign in again.');
+            if (!sessionData) {
+                showError('Could not retrieve session. Please sign in again.');
+                return;
+            }
+
+            // Forward token to Flask backend
+            const payload = {};
+            if (token) {
+                payload.token = token;
+            }
+
+            const response = await fetch('/auth/neon-callback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = data.redirect || '/dashboard';
+            } else {
+                showError('Could not establish session. Please sign in again.');
+            }
+        } catch (error) {
+            console.error('OAuth completion error:', error);
+            showError('An error occurred. Please try again.');
         }
-    } catch (error) {
-        console.error('OAuth completion error:', error);
-        showError('An error occurred. Please try again.');
-    }
-});
+    });
 </script>
 {% endblock %}

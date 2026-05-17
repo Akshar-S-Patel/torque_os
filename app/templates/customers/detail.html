@@ -1,15 +1,15 @@
 {% extends "base/layout.html" %}
 
-{% block title %}{{ customer.first_name }} {{ customer.family_name }} - RepairOS{% endblock %}
+{% block title %}{{ customer.first_name }} {{ customer.family_name }} - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.customers') }}">Customers</a>
-    </li>
-    <li class="breadcrumb-item active">{{ customer.first_name }} {{ customer.family_name }}</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.customers') }}">Customers</a>
+</li>
+<li class="breadcrumb-item active">{{ customer.first_name }} {{ customer.family_name }}</li>
 {% endblock %}
 
 {% block content %}
@@ -94,7 +94,8 @@
             </div>
             <div class="card-body">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center">
+                    <div
+                        class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center">
                         <i class="ti ti-user text-primary" style="font-size: 1.5rem;"></i>
                     </div>
                     <div>
@@ -153,12 +154,14 @@
                         {% for job in stats.jobs %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}" class="text-decoration-none fw-semibold">
+                                <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
+                                    class="text-decoration-none fw-semibold">
                                     #{{ job.job_id }}
                                 </a>
                             </td>
                             <td>{{ job.job_date.strftime('%b %d, %Y') if job.job_date else 'N/A' }}</td>
-                            <td><span class="fw-semibold text-success">${{ "%.2f"|format(job.total_cost|float) }}</span></td>
+                            <td><span class="fw-semibold text-success">${{ "%.2f"|format(job.total_cost|float) }}</span>
+                            </td>
                             <td>
                                 {% if job.completed %}
                                 <span class="badge bg-success"><i class="ti ti-circle-check me-1"></i>Completed</span>
@@ -175,7 +178,7 @@
                             </td>
                             <td>
                                 <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
-                                   class="btn btn-sm btn-outline-primary" title="View">
+                                    class="btn btn-sm btn-outline-primary" title="View">
                                     <i class="ti ti-eye"></i>
                                 </a>
                             </td>

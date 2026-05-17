@@ -1,4 +1,4 @@
-/* RepairOS - Custom Styles (Tabler Overrides)
+/* TorqueOS - Custom Styles (Tabler Overrides)
  * Minimal app-specific styles on top of Tabler UI framework
  * ========================================================= */
 
@@ -170,7 +170,7 @@
 
 .divider::before,
 .divider::after {
-    content: '';
+    content: "";
     flex: 1;
     border-bottom: 1px solid var(--tblr-border-color);
 }

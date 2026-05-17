@@ -1,6 +1,6 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Page Not Found - RepairOS{% endblock %}
+{% block title %}Page Not Found - TorqueOS{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -20,22 +20,22 @@
                                 <i class="ti ti-home me-2"></i>Back to Home
                             </a>
                             {% if session.logged_in %}
-                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
-                                    <i class="ti ti-layout-dashboard me-2"></i>Dashboard
-                                </a>
-                                {% if session.current_role == 'technician' %}
-                                    <a href="{{ url_for('technician.current_jobs') }}" class="btn btn-outline-secondary">
-                                        <i class="ti ti-list me-2"></i>Current Jobs
-                                    </a>
-                                {% elif session.current_role in ('owner', 'admin') %}
-                                    <a href="{{ url_for('administrator.customer_list') }}" class="btn btn-outline-secondary">
-                                        <i class="ti ti-users me-2"></i>Customer Management
-                                    </a>
-                                {% endif %}
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
+                                <i class="ti ti-layout-dashboard me-2"></i>Dashboard
+                            </a>
+                            {% if session.current_role == 'technician' %}
+                            <a href="{{ url_for('technician.current_jobs') }}" class="btn btn-outline-secondary">
+                                <i class="ti ti-list me-2"></i>Current Jobs
+                            </a>
+                            {% elif session.current_role in ('owner', 'admin') %}
+                            <a href="{{ url_for('administrator.customer_list') }}" class="btn btn-outline-secondary">
+                                <i class="ti ti-users me-2"></i>Customer Management
+                            </a>
+                            {% endif %}
                             {% else %}
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
-                                    <i class="ti ti-login me-2"></i>Login to System
-                                </a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                                <i class="ti ti-login me-2"></i>Login to System
+                            </a>
                             {% endif %}
                         </div>
                     </div>
@@ -49,9 +49,10 @@
                             Customer List
                         </a>
                         {% if session.logged_in and session.current_role == 'technician' %}
-                            <a href="{{ url_for('technician.new_job') }}" class="btn btn-sm btn-outline-secondary me-2 mb-1">
-                                New Job
-                            </a>
+                        <a href="{{ url_for('technician.new_job') }}"
+                            class="btn btn-sm btn-outline-secondary me-2 mb-1">
+                            New Job
+                        </a>
                         {% endif %}
                         <a href="{{ url_for('main.help_page') }}" class="btn btn-sm btn-outline-secondary me-2 mb-1">
                             Help Center

@@ -1,12 +1,12 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Customers - RepairOS{% endblock %}
+{% block title %}Customers - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item active">Customers</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item active">Customers</li>
 {% endblock %}
 
 {% block content %}
@@ -35,16 +35,15 @@
                 <div class="input-icon">
                     <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                     <input type="text" class="form-control" name="search"
-                           placeholder="Search by name, email, or phone..."
-                           value="{{ search_query }}">
+                        placeholder="Search by name, email, or phone..." value="{{ search_query }}">
                 </div>
             </div>
             <div class="col-auto">
                 <label class="form-label">Search by:</label>
                 <select class="form-select" name="search_type">
-                    <option value="both" {% if search_type == 'both' %}selected{% endif %}>Name & Email</option>
-                    <option value="name" {% if search_type == 'name' %}selected{% endif %}>Name Only</option>
-                    <option value="email" {% if search_type == 'email' %}selected{% endif %}>Email Only</option>
+                    <option value="both" {% if search_type=='both' %}selected{% endif %}>Name & Email</option>
+                    <option value="name" {% if search_type=='name' %}selected{% endif %}>Name Only</option>
+                    <option value="email" {% if search_type=='email' %}selected{% endif %}>Email Only</option>
                 </select>
             </div>
             <div class="col-auto">
@@ -101,11 +100,13 @@
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
+                            <div
+                                class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
                                 <i class="ti ti-user text-primary"></i>
                             </div>
                             <div>
-                                <a href="{{ url_for('main.customer_detail', customer_id=customer.customer_id) }}" class="fw-semibold text-decoration-none">
+                                <a href="{{ url_for('main.customer_detail', customer_id=customer.customer_id) }}"
+                                    class="fw-semibold text-decoration-none">
                                     {{ customer.first_name }} {{ customer.family_name }}
                                 </a>
                                 <small class="text-muted d-block">ID: #{{ customer.customer_id }}</small>
@@ -127,11 +128,11 @@
                     <td>
                         <div class="d-flex gap-1">
                             <a href="{{ url_for('main.customer_detail', customer_id=customer.customer_id) }}"
-                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                class="btn btn-sm btn-outline-primary" title="View Details">
                                 <i class="ti ti-eye"></i>
                             </a>
                             <a href="{{ url_for('main.edit_customer', customer_id=customer.customer_id) }}"
-                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                class="btn btn-sm btn-outline-secondary" title="Edit">
                                 <i class="ti ti-pencil"></i>
                             </a>
                         </div>
@@ -149,9 +150,9 @@
         </p>
         <p class="empty-subtitle text-secondary">
             {% if search_query %}
-                No customers match your search criteria. Try a different search term.
+            No customers match your search criteria. Try a different search term.
             {% else %}
-                Get started by adding your first customer.
+            Get started by adding your first customer.
             {% endif %}
         </p>
         {% if not search_query %}

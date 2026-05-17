@@ -1,12 +1,12 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Parts - RepairOS{% endblock %}
+{% block title %}Parts - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item active">Parts</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item active">Parts</li>
 {% endblock %}
 
 {% block content %}
@@ -29,7 +29,8 @@
             All Parts
         </h3>
         <div class="card-actions">
-            <span class="text-muted">{{ parts|length if parts else 0 }} part{{ 's' if not parts or parts|length != 1 }}</span>
+            <span class="text-muted">{{ parts|length if parts else 0 }} part{{ 's' if not parts or parts|length != 1
+                }}</span>
         </div>
     </div>
 
@@ -52,7 +53,8 @@
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
+                            <div
+                                class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
                                 <i class="ti ti-package text-primary"></i>
                             </div>
                             <div>
@@ -84,12 +86,13 @@
                         {% if part.stock_level is defined %}
                         <div class="d-flex align-items-center gap-1">
                             <i class="ti ti-stack-2 text-muted"></i>
-                            <span class="{% if part.stock_level <= 5 %}text-danger fw-semibold{% elif part.stock_level <= 20 %}text-warning fw-semibold{% else %}fw-medium{% endif %}">
+                            <span
+                                class="{% if part.stock_level <= 5 %}text-danger fw-semibold{% elif part.stock_level <= 20 %}text-warning fw-semibold{% else %}fw-medium{% endif %}">
                                 {{ part.stock_level }}
                             </span>
-                            {% if part.stock_level <= 5 %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger ms-1" style="font-size: 0.7rem;">Low</span>
-                            {% endif %}
+                            {% if part.stock_level <= 5 %} <span class="badge bg-danger bg-opacity-10 text-danger ms-1"
+                                style="font-size: 0.7rem;">Low</span>
+                                {% endif %}
                         </div>
                         {% else %}
                         <span class="text-muted">--</span>
@@ -107,15 +110,15 @@
                     </td>
                     <td>
                         {% if part.active is defined and not part.active %}
-                            <span class="badge bg-danger">
-                                <i class="ti ti-circle-x me-1"></i>
-                                Inactive
-                            </span>
+                        <span class="badge bg-danger">
+                            <i class="ti ti-circle-x me-1"></i>
+                            Inactive
+                        </span>
                         {% else %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-circle-check me-1"></i>
-                                Active
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-circle-check me-1"></i>
+                            Active
+                        </span>
                         {% endif %}
                     </td>
                 </tr>

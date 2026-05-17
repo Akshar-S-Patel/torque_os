@@ -1,15 +1,15 @@
 {% extends "base/layout.html" %}
 
-{% block title %}{% if action == 'edit' %}Edit Customer{% else %}New Customer{% endif %} - RepairOS{% endblock %}
+{% block title %}{% if action == 'edit' %}Edit Customer{% else %}New Customer{% endif %} - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.customers') }}">Customers</a>
-    </li>
-    <li class="breadcrumb-item active">{% if action == 'edit' %}Edit Customer{% else %}New Customer{% endif %}</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.customers') }}">Customers</a>
+</li>
+<li class="breadcrumb-item active">{% if action == 'edit' %}Edit Customer{% else %}New Customer{% endif %}</li>
 {% endblock %}
 
 {% block content %}
@@ -41,31 +41,27 @@
             </div>
             <div class="card-body">
                 <form method="POST"
-                      action="{% if action == 'edit' %}{{ url_for('main.update_customer', customer_id=customer.customer_id) }}{% else %}{{ url_for('main.create_customer') }}{% endif %}">
+                    action="{% if action == 'edit' %}{{ url_for('main.update_customer', customer_id=customer.customer_id) }}{% else %}{{ url_for('main.create_customer') }}{% endif %}">
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label fw-medium">First Name</label>
-                            <input type="text" class="form-control" name="first_name"
-                                   placeholder="Enter first name"
-                                   value="{{ customer.first_name if customer else '' }}">
+                            <input type="text" class="form-control" name="first_name" placeholder="Enter first name"
+                                value="{{ customer.first_name if customer else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Family Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="family_name" required
-                                   placeholder="Enter family name"
-                                   value="{{ customer.family_name if customer else '' }}">
+                                placeholder="Enter family name" value="{{ customer.family_name if customer else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Email <span class="text-danger">*</span></label>
                             <input type="email" class="form-control" name="email" required
-                                   placeholder="Enter email address"
-                                   value="{{ customer.email if customer else '' }}">
+                                placeholder="Enter email address" value="{{ customer.email if customer else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Phone <span class="text-danger">*</span></label>
                             <input type="tel" class="form-control" name="phone" required
-                                   placeholder="Enter phone number"
-                                   value="{{ customer.phone if customer else '' }}">
+                                placeholder="Enter phone number" value="{{ customer.phone if customer else '' }}">
                         </div>
                     </div>
 

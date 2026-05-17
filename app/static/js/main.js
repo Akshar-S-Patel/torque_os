@@ -1,20 +1,20 @@
-// RepairOS - Main JavaScript
+// TorqueOS - Main JavaScript
 // ================================
 
 // Design System Colors
 const DesignColors = {
-    primary: '#1e3a5f',
-    primaryHover: '#152a45',
-    accent: '#e85d04',
-    success: '#2d6a4f',
-    warning: '#e9c46a',
-    error: '#c1121f',
-    info: '#219ebc',
-    gray500: '#64748b'
+    primary: "#1e3a5f",
+    primaryHover: "#152a45",
+    accent: "#e85d04",
+    success: "#2d6a4f",
+    warning: "#e9c46a",
+    error: "#c1121f",
+    info: "#219ebc",
+    gray500: "#64748b",
 };
 
 // Global application state
-const RepairOSApp = {
+const TorqueOSApp = {
     currentUser: null,
     notifications: [],
     settings: {},
@@ -26,14 +26,14 @@ const RepairOSApp = {
     },
 
     setupEventListeners() {
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             this.onDOMLoaded();
         });
 
         // Handle form submissions with loading states
-        const forms = document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', this.handleFormSubmit.bind(this));
+        const forms = document.querySelectorAll("form");
+        forms.forEach((form) => {
+            form.addEventListener("submit", this.handleFormSubmit.bind(this));
         });
 
         // Setup search functionality
@@ -82,18 +82,19 @@ const RepairOSApp = {
         if (!button) return;
 
         button.disabled = true;
-        button.classList.add('loading');
+        button.classList.add("loading");
 
         const originalText = button.innerHTML;
         button.dataset.originalText = originalText;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        button.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
     },
 
     hideFormLoading(button) {
         if (!button) return;
 
         button.disabled = false;
-        button.classList.remove('loading');
+        button.classList.remove("loading");
 
         if (button.dataset.originalText) {
             button.innerHTML = button.dataset.originalText;
@@ -101,23 +102,29 @@ const RepairOSApp = {
     },
 
     validateForm(form) {
-        const inputs = form.querySelectorAll('[required]');
+        const inputs = form.querySelectorAll("[required]");
         let isValid = true;
 
-        inputs.forEach(input => {
+        inputs.forEach((input) => {
             if (!input.value.trim()) {
-                this.showFieldError(input, 'This field is required');
+                this.showFieldError(input, "This field is required");
                 isValid = false;
             } else {
                 this.clearFieldError(input);
 
-                if (input.type === 'email' && !this.isValidEmail(input.value)) {
-                    this.showFieldError(input, 'Please enter a valid email address');
+                if (input.type === "email" && !this.isValidEmail(input.value)) {
+                    this.showFieldError(
+                        input,
+                        "Please enter a valid email address",
+                    );
                     isValid = false;
                 }
 
-                if (input.type === 'tel' && !this.isValidPhone(input.value)) {
-                    this.showFieldError(input, 'Please enter a valid phone number');
+                if (input.type === "tel" && !this.isValidPhone(input.value)) {
+                    this.showFieldError(
+                        input,
+                        "Please enter a valid phone number",
+                    );
                     isValid = false;
                 }
             }
@@ -127,32 +134,32 @@ const RepairOSApp = {
     },
 
     showFieldError(input, message) {
-        input.classList.add('is-invalid');
+        input.classList.add("is-invalid");
 
-        let feedback = input.parentNode.querySelector('.invalid-feedback');
+        let feedback = input.parentNode.querySelector(".invalid-feedback");
         if (!feedback) {
-            feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback';
+            feedback = document.createElement("div");
+            feedback.className = "invalid-feedback";
             input.parentNode.appendChild(feedback);
         }
         feedback.textContent = message;
     },
 
     clearFieldError(input) {
-        input.classList.remove('is-invalid');
-        const feedback = input.parentNode.querySelector('.invalid-feedback');
+        input.classList.remove("is-invalid");
+        const feedback = input.parentNode.querySelector(".invalid-feedback");
         if (feedback) {
-            feedback.textContent = '';
+            feedback.textContent = "";
         }
     },
 
     // Global search functionality
     setupGlobalSearch() {
-        const searchInput = document.getElementById('globalSearch');
+        const searchInput = document.getElementById("globalSearch");
         if (!searchInput) return;
 
         let searchTimeout;
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener("input", (e) => {
             clearTimeout(searchTimeout);
 
             searchTimeout = setTimeout(() => {
@@ -165,8 +172,8 @@ const RepairOSApp = {
     },
 
     createSearchDropdown(searchInput) {
-        const dropdown = document.createElement('div');
-        dropdown.className = 'search-dropdown';
+        const dropdown = document.createElement("div");
+        dropdown.className = "search-dropdown";
         dropdown.style.cssText = `
             position: absolute;
             top: 100%;
@@ -182,12 +189,12 @@ const RepairOSApp = {
             display: none;
         `;
 
-        searchInput.parentNode.style.position = 'relative';
+        searchInput.parentNode.style.position = "relative";
         searchInput.parentNode.appendChild(dropdown);
 
-        document.addEventListener('click', (e) => {
+        document.addEventListener("click", (e) => {
             if (!searchInput.parentNode.contains(e.target)) {
-                dropdown.style.display = 'none';
+                dropdown.style.display = "none";
             }
         });
     },
@@ -201,28 +208,30 @@ const RepairOSApp = {
         try {
             this.showSearchLoading();
 
-            const response = await fetch(`/api/search/customers?q=${encodeURIComponent(query)}`);
+            const response = await fetch(
+                `/api/search/customers?q=${encodeURIComponent(query)}`,
+            );
             if (!response.ok) {
                 throw new Error(`Search request failed: ${response.status}`);
             }
 
             const customers = await response.json();
-            const results = customers.map(c => ({
-                type: 'customer',
+            const results = customers.map((c) => ({
+                type: "customer",
                 id: c.customer_id,
                 title: c.full_name,
-                subtitle: [c.email, c.phone].filter(Boolean).join(' | ')
+                subtitle: [c.email, c.phone].filter(Boolean).join(" | "),
             }));
 
             this.displaySearchResults(results);
         } catch (error) {
-            console.error('Search error:', error);
+            console.error("Search error:", error);
             this.showSearchError();
         }
     },
 
     displaySearchResults(results) {
-        const dropdown = document.querySelector('.search-dropdown');
+        const dropdown = document.querySelector(".search-dropdown");
         if (!dropdown) return;
 
         if (results.length === 0) {
@@ -233,41 +242,48 @@ const RepairOSApp = {
                 </div>
             `;
         } else {
-            dropdown.innerHTML = results.map(result => `
+            dropdown.innerHTML = results
+                .map(
+                    (result) => `
                 <div class="search-result-item p-3 border-bottom" data-type="${result.type}" data-id="${result.id}">
                     <div class="d-flex align-items-center">
-                        <i class="ti ti-${result.type === 'customer' ? 'user' : 'tool'} me-3 text-primary"></i>
+                        <i class="ti ti-${result.type === "customer" ? "user" : "tool"} me-3 text-primary"></i>
                         <div>
                             <div class="fw-semibold">${result.title}</div>
                             <small class="text-secondary">${result.subtitle}</small>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `,
+                )
+                .join("");
 
-            dropdown.querySelectorAll('.search-result-item').forEach(item => {
-                item.style.cursor = 'pointer';
-                item.addEventListener('click', () => {
-                    this.handleSearchResultClick(item.dataset.type, item.dataset.id);
+            dropdown.querySelectorAll(".search-result-item").forEach((item) => {
+                item.style.cursor = "pointer";
+                item.addEventListener("click", () => {
+                    this.handleSearchResultClick(
+                        item.dataset.type,
+                        item.dataset.id,
+                    );
                 });
 
-                item.addEventListener('mouseenter', () => {
-                    item.style.backgroundColor = '#f8fafc';
+                item.addEventListener("mouseenter", () => {
+                    item.style.backgroundColor = "#f8fafc";
                 });
 
-                item.addEventListener('mouseleave', () => {
-                    item.style.backgroundColor = 'white';
+                item.addEventListener("mouseleave", () => {
+                    item.style.backgroundColor = "white";
                 });
             });
         }
 
-        dropdown.style.display = 'block';
+        dropdown.style.display = "block";
     },
 
     handleSearchResultClick(type, id) {
-        if (type === 'customer') {
+        if (type === "customer") {
             window.location.href = `/customers/${id}`;
-        } else if (type === 'job') {
+        } else if (type === "job") {
             window.location.href = `/jobs/${id}`;
         }
 
@@ -275,7 +291,7 @@ const RepairOSApp = {
     },
 
     showSearchLoading() {
-        const dropdown = document.querySelector('.search-dropdown');
+        const dropdown = document.querySelector(".search-dropdown");
         if (dropdown) {
             dropdown.innerHTML = `
                 <div class="p-3 text-center">
@@ -283,12 +299,12 @@ const RepairOSApp = {
                     Searching...
                 </div>
             `;
-            dropdown.style.display = 'block';
+            dropdown.style.display = "block";
         }
     },
 
     showSearchError() {
-        const dropdown = document.querySelector('.search-dropdown');
+        const dropdown = document.querySelector(".search-dropdown");
         if (dropdown) {
             dropdown.innerHTML = `
                 <div class="p-3 text-center text-danger">
@@ -300,20 +316,20 @@ const RepairOSApp = {
     },
 
     hideSearchResults() {
-        const dropdown = document.querySelector('.search-dropdown');
+        const dropdown = document.querySelector(".search-dropdown");
         if (dropdown) {
-            dropdown.style.display = 'none';
+            dropdown.style.display = "none";
         }
     },
 
     // Auto-save functionality
     setupAutoSave() {
-        const forms = document.querySelectorAll('[data-autosave]');
+        const forms = document.querySelectorAll("[data-autosave]");
 
-        forms.forEach(form => {
-            const inputs = form.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                input.addEventListener('change', () => {
+        forms.forEach((form) => {
+            const inputs = form.querySelectorAll("input, textarea, select");
+            inputs.forEach((input) => {
+                input.addEventListener("change", () => {
                     this.autoSaveForm(form);
                 });
             });
@@ -324,17 +340,17 @@ const RepairOSApp = {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
-        const formId = form.id || 'auto-save-form';
+        const formId = form.id || "auto-save-form";
         localStorage.setItem(`autosave_${formId}`, JSON.stringify(data));
 
         this.showAutoSaveIndicator();
     },
 
     showAutoSaveIndicator() {
-        let indicator = document.getElementById('autosave-indicator');
+        let indicator = document.getElementById("autosave-indicator");
         if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.id = 'autosave-indicator';
+            indicator = document.createElement("div");
+            indicator.id = "autosave-indicator";
             indicator.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -355,10 +371,10 @@ const RepairOSApp = {
         }
 
         indicator.innerHTML = '<i class="ti ti-check"></i>Auto-saved';
-        indicator.style.opacity = '1';
+        indicator.style.opacity = "1";
 
         setTimeout(() => {
-            indicator.style.opacity = '0';
+            indicator.style.opacity = "0";
         }, 2000);
     },
 
@@ -367,9 +383,11 @@ const RepairOSApp = {
         this.loadNotifications();
         this.updateNotificationBadge();
 
-        const notificationDropdown = document.querySelector('[data-bs-toggle="dropdown"]');
+        const notificationDropdown = document.querySelector(
+            '[data-bs-toggle="dropdown"]',
+        );
         if (notificationDropdown) {
-            notificationDropdown.addEventListener('click', () => {
+            notificationDropdown.addEventListener("click", () => {
                 this.markNotificationsAsRead();
             });
         }
@@ -379,34 +397,36 @@ const RepairOSApp = {
         this.notifications = [
             {
                 id: 1,
-                title: 'Overdue Payment',
-                message: 'Customer #1234 payment is overdue',
-                type: 'warning',
+                title: "Overdue Payment",
+                message: "Customer #1234 payment is overdue",
+                type: "warning",
                 timestamp: new Date(),
-                read: false
+                read: false,
             },
             {
                 id: 2,
-                title: 'Job Completed',
-                message: 'Job #5678 has been marked as complete',
-                type: 'success',
+                title: "Job Completed",
+                message: "Job #5678 has been marked as complete",
+                type: "success",
                 timestamp: new Date(),
-                read: false
-            }
+                read: false,
+            },
         ];
     },
 
     updateNotificationBadge() {
-        const badge = document.querySelector('.navbar .badge');
+        const badge = document.querySelector(".navbar .badge");
         if (badge) {
-            const unreadCount = this.notifications.filter(n => !n.read).length;
+            const unreadCount = this.notifications.filter(
+                (n) => !n.read,
+            ).length;
             badge.textContent = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'inline' : 'none';
+            badge.style.display = unreadCount > 0 ? "inline" : "none";
         }
     },
 
     markNotificationsAsRead() {
-        this.notifications.forEach(notification => {
+        this.notifications.forEach((notification) => {
             notification.read = true;
         });
         this.updateNotificationBadge();
@@ -414,30 +434,34 @@ const RepairOSApp = {
 
     // Initialize Bootstrap/Tabler components
     initializeBootstrapComponents() {
-        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltips.forEach(tooltip => {
+        const tooltips = document.querySelectorAll(
+            '[data-bs-toggle="tooltip"]',
+        );
+        tooltips.forEach((tooltip) => {
             new bootstrap.Tooltip(tooltip);
         });
 
-        const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-        popovers.forEach(popover => {
+        const popovers = document.querySelectorAll(
+            '[data-bs-toggle="popover"]',
+        );
+        popovers.forEach((popover) => {
             new bootstrap.Popover(popover);
         });
     },
 
     // Keyboard shortcuts
     setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        document.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "k") {
                 e.preventDefault();
-                const searchInput = document.getElementById('globalSearch');
+                const searchInput = document.getElementById("globalSearch");
                 if (searchInput) {
                     searchInput.focus();
                 }
             }
 
-            if (e.key === 'Escape') {
-                const activeModal = document.querySelector('.modal.show');
+            if (e.key === "Escape") {
+                const activeModal = document.querySelector(".modal.show");
                 if (activeModal) {
                     const modal = bootstrap.Modal.getInstance(activeModal);
                     if (modal) modal.hide();
@@ -450,29 +474,36 @@ const RepairOSApp = {
 
     // Chart initialization
     initializeCharts() {
-        const isDashboard = window.location.pathname.includes('dashboard');
-        const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart');
-        const jobStatusCtx = document.getElementById('jobStatusChart');
+        const isDashboard = window.location.pathname.includes("dashboard");
+        const monthlyRevenueCtx = document.getElementById(
+            "monthlyRevenueChart",
+        );
+        const jobStatusCtx = document.getElementById("jobStatusChart");
 
         if (!monthlyRevenueCtx && !jobStatusCtx) return;
 
         if (isDashboard) {
-            const pathParts = window.location.pathname.split('/');
-            const orgIndex = pathParts.indexOf('org');
-            let apiUrl = '/administrator/api/dashboard/summary';
+            const pathParts = window.location.pathname.split("/");
+            const orgIndex = pathParts.indexOf("org");
+            let apiUrl = "/administrator/api/dashboard/summary";
             if (orgIndex !== -1 && pathParts[orgIndex + 1]) {
                 const slug = pathParts[orgIndex + 1];
                 apiUrl = `/org/${slug}/administrator/api/dashboard/summary`;
             }
 
             fetch(apiUrl)
-                .then(res => res.ok ? res.json() : Promise.reject(res.status))
-                .then(data => {
+                .then((res) =>
+                    res.ok ? res.json() : Promise.reject(res.status),
+                )
+                .then((data) => {
                     this._renderJobStatusChart(jobStatusCtx, data.jobs);
                     this._renderRevenueChart(monthlyRevenueCtx);
                 })
-                .catch(err => {
-                    console.warn('Dashboard API unavailable, using fallback data:', err);
+                .catch((err) => {
+                    console.warn(
+                        "Dashboard API unavailable, using fallback data:",
+                        err,
+                    );
                     this._renderJobStatusChart(jobStatusCtx, null);
                     this._renderRevenueChart(monthlyRevenueCtx);
                 });
@@ -485,39 +516,63 @@ const RepairOSApp = {
     _renderRevenueChart(ctx) {
         if (!ctx) return;
         new Chart(ctx, {
-            type: 'line',
+            type: "line",
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Monthly Revenue',
-                    data: [12000, 19000, 30000, 50000, 20000, 30000, 45000, 35000, 40000, 55000, 60000, 70000],
-                    borderColor: DesignColors.primary,
-                    backgroundColor: 'rgba(30, 58, 95, 0.1)',
-                    tension: 0.3,
-                    fill: true,
-                    pointBackgroundColor: DesignColors.accent,
-                    pointBorderColor: DesignColors.accent,
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: DesignColors.accent,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
+                labels: [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
+                ],
+                datasets: [
+                    {
+                        label: "Monthly Revenue",
+                        data: [
+                            12000, 19000, 30000, 50000, 20000, 30000, 45000,
+                            35000, 40000, 55000, 60000, 70000,
+                        ],
+                        borderColor: DesignColors.primary,
+                        backgroundColor: "rgba(30, 58, 95, 0.1)",
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: DesignColors.accent,
+                        pointBorderColor: DesignColors.accent,
+                        pointHoverBackgroundColor: "#fff",
+                        pointHoverBorderColor: DesignColors.accent,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(30, 58, 95, 0.08)' } },
-                    x: { grid: { display: false } }
-                }
-            }
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(30, 58, 95, 0.08)" },
+                    },
+                    x: { grid: { display: false } },
+                },
+            },
         });
     },
 
     _renderJobStatusChart(ctx, jobsData) {
         if (!ctx) return;
 
-        let completed = 300, pending = 50, inProgress = 150, cancelled = 20;
+        let completed = 300,
+            pending = 50,
+            inProgress = 150,
+            cancelled = 20;
         if (jobsData) {
             completed = jobsData.completed_jobs || 0;
             pending = jobsData.pending_jobs || 0;
@@ -527,39 +582,47 @@ const RepairOSApp = {
         }
 
         new Chart(ctx, {
-            type: 'doughnut',
+            type: "doughnut",
             data: {
-                labels: ['Completed', 'In Progress', 'Pending', 'Cancelled'],
-                datasets: [{
-                    label: 'Job Status',
-                    data: [completed, inProgress, pending, cancelled],
-                    backgroundColor: [
-                        DesignColors.success,
-                        DesignColors.info,
-                        DesignColors.warning,
-                        DesignColors.error
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 8
-                }]
+                labels: ["Completed", "In Progress", "Pending", "Cancelled"],
+                datasets: [
+                    {
+                        label: "Job Status",
+                        data: [completed, inProgress, pending, cancelled],
+                        backgroundColor: [
+                            DesignColors.success,
+                            DesignColors.info,
+                            DesignColors.warning,
+                            DesignColors.error,
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 8,
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'right',
-                        labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
-                    }
+                        position: "right",
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                        },
+                    },
                 },
-                cutout: '60%'
-            }
+                cutout: "60%",
+            },
         });
     },
 
     // Live updates simulation
     setupLiveUpdates() {
-        if (window.location.pathname.includes('dashboard') ||
-            window.location.pathname.includes('current-jobs')) {
+        if (
+            window.location.pathname.includes("dashboard") ||
+            window.location.pathname.includes("current-jobs")
+        ) {
             setInterval(() => {
                 this.checkForUpdates();
             }, 30000);
@@ -573,13 +636,14 @@ const RepairOSApp = {
                 this.showUpdateNotification();
             }
         } catch (error) {
-            console.error('Update check failed:', error);
+            console.error("Update check failed:", error);
         }
     },
 
     showUpdateNotification() {
-        const notification = document.createElement('div');
-        notification.className = 'alert alert-dismissible fade show position-fixed';
+        const notification = document.createElement("div");
+        notification.className =
+            "alert alert-dismissible fade show position-fixed";
         notification.style.cssText = `
             top: 20px;
             right: 20px;
@@ -611,7 +675,7 @@ const RepairOSApp = {
 
     // User preferences
     loadUserPreferences() {
-        const savedPrefs = localStorage.getItem('repairos_preferences');
+        const savedPrefs = localStorage.getItem("TorqueOS_preferences");
         if (savedPrefs) {
             this.settings = JSON.parse(savedPrefs);
             this.applyUserPreferences();
@@ -619,12 +683,15 @@ const RepairOSApp = {
     },
 
     saveUserPreferences() {
-        localStorage.setItem('repairos_preferences', JSON.stringify(this.settings));
+        localStorage.setItem(
+            "TorqueOS_preferences",
+            JSON.stringify(this.settings),
+        );
     },
 
     applyUserPreferences() {
-        if (this.settings.theme === 'dark') {
-            document.body.classList.add('dark-theme');
+        if (this.settings.theme === "dark") {
+            document.body.classList.add("dark-theme");
         }
     },
 
@@ -636,57 +703,58 @@ const RepairOSApp = {
 
     isValidPhone(phone) {
         const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-        return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+        return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""));
     },
 
     formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
+        return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
         }).format(amount);
     },
 
     formatDate(date) {
-        return new Intl.DateTimeFormat('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+        return new Intl.DateTimeFormat("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
         }).format(new Date(date));
     },
 
-    showToast(message, type = 'info') {
+    showToast(message, type = "info") {
         const iconMap = {
-            success: 'circle-check',
-            error: 'alert-circle',
-            warning: 'alert-triangle',
-            info: 'info-circle'
+            success: "circle-check",
+            error: "alert-circle",
+            warning: "alert-triangle",
+            info: "info-circle",
         };
         const colorMap = {
             success: DesignColors.success,
             error: DesignColors.error,
             warning: DesignColors.warning,
-            info: DesignColors.info
+            info: DesignColors.info,
         };
 
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-white border-0';
+        const toast = document.createElement("div");
+        toast.className = "toast align-items-center text-white border-0";
         toast.style.backgroundColor = colorMap[type] || colorMap.info;
-        toast.setAttribute('role', 'alert');
+        toast.setAttribute("role", "alert");
         toast.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
-                    <i class="ti ti-${iconMap[type] || 'info-circle'}"></i>
+                    <i class="ti ti-${iconMap[type] || "info-circle"}"></i>
                     ${message}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         `;
 
-        let container = document.getElementById('toast-container');
+        let container = document.getElementById("toast-container");
         if (!container) {
-            container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container = document.createElement("div");
+            container.id = "toast-container";
+            container.className =
+                "toast-container position-fixed top-0 end-0 p-3";
             document.body.appendChild(container);
         }
 
@@ -695,14 +763,14 @@ const RepairOSApp = {
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
 
-        toast.addEventListener('hidden.bs.toast', () => {
+        toast.addEventListener("hidden.bs.toast", () => {
             toast.remove();
         });
-    }
+    },
 };
 
 // Initialize the application
-RepairOSApp.init();
+TorqueOSApp.init();
 
 // Expose to global scope for debugging
-window.RepairOSApp = RepairOSApp;
+window.TorqueOSApp = TorqueOSApp;

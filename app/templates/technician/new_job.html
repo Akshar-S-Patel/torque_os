@@ -1,15 +1,15 @@
 {% extends "base/layout.html" %}
 
-{% block title %}New Job - RepairOS{% endblock %}
+{% block title %}New Job - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ url_for('technician.current_jobs') }}">Current Jobs</a>
-    </li>
-    <li class="breadcrumb-item active">New Job</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{{ url_for('technician.current_jobs') }}">Current Jobs</a>
+</li>
+<li class="breadcrumb-item active">New Job</li>
 {% endblock %}
 
 {% block content %}
@@ -68,8 +68,8 @@
                             <i class="ti ti-calendar me-1"></i>
                             Job Date
                         </label>
-                        <input type="date" class="form-control" id="job_date" name="job_date"
-                               min="{{ min_date }}" required>
+                        <input type="date" class="form-control" id="job_date" name="job_date" min="{{ min_date }}"
+                            required>
                         <div class="form-text">
                             <i class="ti ti-info-circle me-1"></i>
                             Select the date for this work order.
@@ -103,13 +103,13 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set default date to today
-    const dateInput = document.getElementById('job_date');
-    if (dateInput && !dateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-    }
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set default date to today
+        const dateInput = document.getElementById('job_date');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+    });
 </script>
 {% endblock %}

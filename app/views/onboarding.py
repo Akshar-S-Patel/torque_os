@@ -103,7 +103,7 @@ def save_step(step_number):
             _save_parts(tenant_id)
         elif step_number == 3:
             _save_invitations(tenant_id)
-            flash('Setup complete! Welcome to RepairOS.', 'success')
+            flash('Setup complete! Welcome to TorqueOS.', 'success')
             return redirect(url_for('onboarding.complete'))
 
         # Move to next step

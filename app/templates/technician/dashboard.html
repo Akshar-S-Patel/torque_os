@@ -1,9 +1,9 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Technician Dashboard - RepairOS{% endblock %}
+{% block title %}Technician Dashboard - TorqueOS{% endblock %}
 
 {% block breadcrumb_items %}
-    <li class="breadcrumb-item active">Dashboard</li>
+<li class="breadcrumb-item active">Dashboard</li>
 {% endblock %}
 
 {% block content %}
@@ -94,13 +94,15 @@
                 {% for job in recent_jobs[:5] %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}" class="text-decoration-none fw-semibold">
+                        <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
+                            class="text-decoration-none fw-semibold">
                             #{{ job.job_id }}
                         </a>
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
+                            <div
+                                class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 d-flex align-items-center justify-content-center">
                                 <i class="ti ti-user text-primary"></i>
                             </div>
                             <div>
@@ -113,20 +115,20 @@
                     </td>
                     <td>
                         {% if job.completed %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-circle-check me-1"></i>
-                                Completed
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-circle-check me-1"></i>
+                            Completed
+                        </span>
                         {% elif job.paid %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-credit-card me-1"></i>
-                                Paid
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-credit-card me-1"></i>
+                            Paid
+                        </span>
                         {% else %}
-                            <span class="badge bg-warning">
-                                <i class="ti ti-clock me-1"></i>
-                                In Progress
-                            </span>
+                        <span class="badge bg-warning">
+                            <i class="ti ti-clock me-1"></i>
+                            In Progress
+                        </span>
                         {% endif %}
                     </td>
                     <td>
@@ -135,11 +137,11 @@
                     <td>
                         <div class="d-flex gap-1">
                             <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
-                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                class="btn btn-sm btn-outline-primary" title="View Details">
                                 <i class="ti ti-eye"></i>
                             </a>
                             <a href="{{ url_for('technician.modify_job', job_id=job.job_id) }}"
-                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                class="btn btn-sm btn-outline-secondary" title="Edit">
                                 <i class="ti ti-pencil"></i>
                             </a>
                         </div>
@@ -191,7 +193,8 @@
                 {% for job in todays_schedule %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}" class="text-decoration-none fw-semibold">
+                        <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
+                            class="text-decoration-none fw-semibold">
                             #{{ job.job_id }}
                         </a>
                     </td>
@@ -200,15 +203,15 @@
                     </td>
                     <td>
                         {% if job.completed %}
-                            <span class="badge bg-success">
-                                <i class="ti ti-circle-check me-1"></i>
-                                Completed
-                            </span>
+                        <span class="badge bg-success">
+                            <i class="ti ti-circle-check me-1"></i>
+                            Completed
+                        </span>
                         {% else %}
-                            <span class="badge bg-warning">
-                                <i class="ti ti-clock me-1"></i>
-                                In Progress
-                            </span>
+                        <span class="badge bg-warning">
+                            <i class="ti ti-clock me-1"></i>
+                            In Progress
+                        </span>
                         {% endif %}
                     </td>
                     <td>
@@ -216,7 +219,7 @@
                     </td>
                     <td>
                         <a href="{{ url_for('technician.job_detail', job_id=job.job_id) }}"
-                           class="btn btn-sm btn-outline-primary" title="View Details">
+                            class="btn btn-sm btn-outline-primary" title="View Details">
                             <i class="ti ti-eye"></i>
                         </a>
                     </td>

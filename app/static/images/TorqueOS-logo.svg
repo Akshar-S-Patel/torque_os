@@ -1,0 +1,92 @@
+<svg viewBox="0 0 932 771" width="932" height="771" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Vibrant Tech Blue Gradient for Gear / OS -->
+    <linearGradient id="gearGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052D4" />
+      <stop offset="50%" stop-color="#4364F7" />
+      <stop offset="100%" stop-color="#00C6FF" />
+    </linearGradient>
+
+    <!-- Fiery Orange Gradient for Wrench / Torque -->
+    <linearGradient id="wrenchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF512F" />
+      <stop offset="100%" stop-color="#F09819" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for 3D Float Effect -->
+    <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="6" dy="12" stdDeviation="10" flood-color="#020617" flood-opacity="0.15" />
+    </filter>
+
+    <!-- Wrench Base Shape Definition -->
+    <g id="wrenchShape">
+      <!-- Top Open Crescent Head Base -->
+      <circle cx="150" cy="45" r="36" />
+      <!-- Main Shaft -->
+      <rect x="135" y="65" width="30" height="170" rx="6" />
+      <!-- Inner Shaft 3D Highlight Bevel -->
+      <rect x="146" y="80" width="8" height="140" rx="4" fill="#FFFFFF" opacity="0.3" />
+      <!-- Bottom Closed Ring Head Base -->
+      <circle cx="150" cy="255" r="32" />
+    </g>
+
+    <!-- Mask to punch holes and create the final wrench shape -->
+    <mask id="wrenchMask" maskUnits="userSpaceOnUse">
+      <!-- Base canvas (White = Visible) -->
+      <rect x="-100" y="-100" width="600" height="600" fill="white" />
+      <!-- Top slot cutout for open-ended wrench -->
+      <rect x="133" y="-10" width="34" height="60" rx="4" fill="black" />
+      <!-- Bottom hole cutout for box-ended wrench -->
+      <circle cx="150" cy="255" r="16" fill="black" />
+      <!-- Center hub hole to expose the gear core -->
+      <circle cx="150" cy="150" r="14" fill="black" />
+    </mask>
+  </defs>
+
+  <!-- ========================================== -->
+  <!-- 1. CENTERED SYMBOL (GEAR + WRENCH)         -->
+  <!-- ========================================== -->
+  <g filter="url(#soft-shadow)" transform="translate(466, 310) scale(2.2) translate(-150, -150)">
+    
+    <!-- 3D Extrusion Shadow for Gear -->
+    <g transform="translate(0, 8)">
+      <circle cx="150" cy="150" r="82" stroke="#00183D" stroke-width="20" stroke-dasharray="20 44.4" stroke-linecap="round" fill="none" />
+      <circle cx="150" cy="150" r="66" stroke="#00183D" stroke-width="16" fill="none" />
+      <circle cx="150" cy="150" r="30" stroke="#00183D" stroke-width="8" fill="none" />
+    </g>
+
+    <!-- Top Glossy Layer for Gear -->
+    <g>
+      <!-- Outer Node Teeth -->
+      <circle cx="150" cy="150" r="82" stroke="url(#gearGrad)" stroke-width="20" stroke-dasharray="20 44.4" stroke-linecap="round" fill="none" />
+      <!-- Main Inner Ring -->
+      <circle cx="150" cy="150" r="66" stroke="url(#gearGrad)" stroke-width="16" fill="none" />
+      <!-- Center Hub Details -->
+      <circle cx="150" cy="150" r="30" stroke="url(#gearGrad)" stroke-width="8" fill="none" />
+      <circle cx="150" cy="150" r="14" fill="#00C6FF" />
+    </g>
+    
+    <!-- 3D Extrusion Shadow for Wrench -->
+    <g transform="translate(0, 8)">
+      <use href="#wrenchShape" transform="rotate(45 150 150)" fill="#780A1A" mask="url(#wrenchMask)" />
+    </g>
+
+    <!-- Top Glossy Layer for Wrench -->
+    <use href="#wrenchShape" transform="rotate(45 150 150)" fill="url(#wrenchGrad)" mask="url(#wrenchMask)" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 2. TYPOGRAPHY (STACKED & CENTERED)         -->
+  <!-- ========================================== -->
+  <g>
+    <!-- Main Brand Name -->
+    <text x="466" y="630" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="900" font-size="140" fill="#0F172A" letter-spacing="-4" text-anchor="middle">
+      Torque<tspan fill="url(#gearGrad)">OS</tspan>
+    </text>
+    
+    <!-- Tagline -->
+    <text x="466" y="695" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="28" fill="#64748B" letter-spacing="8" text-anchor="middle">
+      KEEP THE WRENCHES TURNING
+    </text>
+  </g>
+</svg>

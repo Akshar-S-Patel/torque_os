@@ -1,15 +1,15 @@
 {% extends "base/layout.html" %}
 
-{% block title %}Create Organization - RepairOS{% endblock %}
+{% block title %}Create Organization - TorqueOS{% endblock %}
 
 {% block breadcrumb %}{% endblock %}
 
 {% block extra_css %}
 <style>
-.register-bg {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e8eef5 100%);
-    min-height: 80vh;
-}
+    .register-bg {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e8eef5 100%);
+        min-height: 80vh;
+    }
 </style>
 {% endblock %}
 
@@ -25,21 +25,23 @@
                                 <i class="ti ti-building-plus text-primary" style="font-size: 2rem;"></i>
                             </div>
                             <h2 class="fw-bold mb-2">Create Organization</h2>
-                            <p class="text-muted">Set up your business on RepairOS</p>
+                            <p class="text-muted">Set up your business on TorqueOS</p>
                         </div>
 
                         {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                            role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
                         {% endwith %}
 
-                        <form method="POST" action="{{ url_for('auth.register_organization') }}" class="needs-validation" novalidate>
+                        <form method="POST" action="{{ url_for('auth.register_organization') }}"
+                            class="needs-validation" novalidate>
                             <div class="mb-3">
                                 <label for="name" class="form-label fw-semibold">Organization Name</label>
                                 <div class="input-group">
@@ -47,7 +49,7 @@
                                         <i class="ti ti-building text-muted"></i>
                                     </span>
                                     <input type="text" class="form-control" id="name" name="name"
-                                           placeholder="e.g. Mike's Auto Shop" required minlength="2">
+                                        placeholder="e.g. Mike's Auto Shop" required minlength="2">
                                 </div>
                                 <div class="invalid-feedback">Organization name must be at least 2 characters.</div>
                             </div>
@@ -62,31 +64,34 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="email" class="form-label fw-semibold">Business Email <span class="text-muted fw-normal">(optional)</span></label>
+                                <label for="email" class="form-label fw-semibold">Business Email <span
+                                        class="text-muted fw-normal">(optional)</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
                                         <i class="ti ti-mail text-muted"></i>
                                     </span>
                                     <input type="email" class="form-control" id="email" name="email"
-                                           placeholder="shop@example.com">
+                                        placeholder="shop@example.com">
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="phone" class="form-label fw-semibold">Phone <span class="text-muted fw-normal">(optional)</span></label>
+                                <label for="phone" class="form-label fw-semibold">Phone <span
+                                        class="text-muted fw-normal">(optional)</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
                                         <i class="ti ti-phone text-muted"></i>
                                     </span>
                                     <input type="tel" class="form-control" id="phone" name="phone"
-                                           placeholder="(555) 123-4567">
+                                        placeholder="(555) 123-4567">
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <label for="address" class="form-label fw-semibold">Address <span class="text-muted fw-normal">(optional)</span></label>
+                                <label for="address" class="form-label fw-semibold">Address <span
+                                        class="text-muted fw-normal">(optional)</span></label>
                                 <textarea class="form-control" id="address" name="address" rows="2"
-                                          placeholder="Street address, city, state, zip"></textarea>
+                                    placeholder="Street address, city, state, zip"></textarea>
                             </div>
 
                             <button type="submit" class="btn btn-accent btn-lg w-100">
@@ -95,7 +100,8 @@
                         </form>
 
                         <div class="text-center mt-4">
-                            <a href="{{ url_for('auth.no_organization') }}" class="text-muted text-decoration-none text-sm">
+                            <a href="{{ url_for('auth.no_organization') }}"
+                                class="text-muted text-decoration-none text-sm">
                                 <i class="ti ti-arrow-left me-1"></i>Back
                             </a>
                         </div>
@@ -109,27 +115,27 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const forms = document.querySelectorAll('.needs-validation');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+    document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('.needs-validation');
+        forms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    form.classList.add('was-validated');
+                    return;
+                }
                 form.classList.add('was-validated');
-                return;
-            }
-            form.classList.add('was-validated');
-            // Prevent double submission
-            const btn = form.querySelector('button[type="submit"]');
-            if (btn.disabled) {
-                event.preventDefault();
-                return;
-            }
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+                // Prevent double submission
+                const btn = form.querySelector('button[type="submit"]');
+                if (btn.disabled) {
+                    event.preventDefault();
+                    return;
+                }
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+            });
         });
     });
-});
 </script>
 {% endblock %}
