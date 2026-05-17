@@ -29,7 +29,7 @@ class LoggerConfig:
     @staticmethod
     def setup_logging(app: Flask):
         """Set up the application logging system"""
-        log_dir = Path(app.config.get('LOG_DIR', 'logs'))
+        log_dir = Path(app.config.get('LOG_DIR', '/tmp/logs'))
         log_dir.mkdir(exist_ok=True)
 
         # Get log level
