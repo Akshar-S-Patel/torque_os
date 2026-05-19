@@ -221,7 +221,8 @@ def create_customer():
         'first_name': sanitize_input(request.form.get('first_name', '')),
         'family_name': sanitize_input(request.form.get('family_name', '')),
         'email': sanitize_input(request.form.get('email', '')),
-        'phone': sanitize_input(request.form.get('phone', ''))
+        'phone': sanitize_input(request.form.get('phone', '')),
+        'tenant_id': session.get('current_tenant_id')
     }
     
     try:
