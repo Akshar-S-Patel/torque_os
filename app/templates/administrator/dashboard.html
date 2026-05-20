@@ -198,37 +198,33 @@
 
 {% block admin_extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Monthly Revenue Bar Chart
-        const revenueCtx = document.getElementById('revenueChart');
-        if (revenueCtx) {
-            new Chart(revenueCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{
-                        label: 'Revenue ($)',
-                        data: {{ billing_stats.monthly_revenue |default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) | tojson
-        }
-    },
-        backgroundColor: 'rgba(37, 99, 235, 0.8)',
-        borderColor: 'rgba(37, 99, 235, 1)',
-        borderWidth: 1,
-        borderRadius: 6
+document.addEventListener('DOMContentLoaded', function () {
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: {{ billing_stats.monthly_revenue | default([0,0,0,0,0,0,0,0,0,0,0,0]) | tojson }},
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
                 }]
             },
-        options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true, ticks: { callback: function (v) { return '$' + v; } } }
-        }
-    }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: function(v) { return '$' + v; } } }
+                }
+            }
         });
     }
 
-    // Job Status Doughnut Chart
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         new Chart(statusCtx, {
@@ -237,20 +233,20 @@
                 labels: ['Completed', 'In Progress', 'Pending'],
                 datasets: [{
                     data: [
-                        {{ job_stats.completed |default(0) }},
-                {{ job_stats.in_progress |default(0) }},
-                        {{ job_stats.pending |default(0) }}
+                        {{ job_stats.completed | default(0) }},
+                        {{ job_stats.in_progress | default(0) }},
+                        {{ job_stats.pending | default(0) }}
                     ],
-    backgroundColor: ['#16a34a', '#f59e0b', '#6b7280'],
-        borderWidth: 0
+                    backgroundColor: ['#16a34a', '#f59e0b', '#6b7280'],
+                    borderWidth: 0
                 }]
             },
-    options: {
-        responsive: true,
-            maintainAspectRatio: false,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: { legend: { position: 'bottom' } },
-        cutout: '65%'
-    }
+                cutout: '65%'
+            }
         });
     }
 });
