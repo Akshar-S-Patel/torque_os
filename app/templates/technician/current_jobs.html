@@ -469,7 +469,7 @@
     }
 
     function markAsPaid(jobId) {
-        if (confirm('Mark this job as paid?')) {
+        if (confirm('Mark this job as paid? This action cannot be undone.')) {
             // Implementation for marking as paid
             console.log('Marking job', jobId, 'as paid');
             // You can implement the actual API call here

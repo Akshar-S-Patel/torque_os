@@ -159,6 +159,54 @@ class JobService:
             self.logger.error(f"Failed to add part: {e}")
             db.session.rollback()
             return False, ["System error, please try again"]
+        
+    def remove_service_from_job(self, job_id: int, service_id: int) -> Tuple[bool, List[str]]:
+        """
+        Remove service from job
+
+        Args:
+            job_id: Job ID
+            service_id: Service ID
+
+        Returns:
+            (success, error_messages)
+        """
+        try:
+            job = Job.find_by_id(job_id)
+            if not job:
+                return False, ['Job not found']
+            job.remove_service(service_id)
+            return True, []
+        except ValueError as e:
+            return False, [str(e)]
+        except Exception as e:
+            self.logger.error(f"Failed to remove service: {e}")
+            db.session.rollback()
+            return False, ['System error, please try again']
+
+    def remove_part_from_job(self, job_id: int, part_id: int) -> Tuple[bool, List[str]]:
+        """
+        Remove part from job
+
+        Args:
+            job_id: Job ID
+            part_id: Part ID
+
+        Returns:
+            (success, error_messages)
+        """
+        try:
+            job = Job.find_by_id(job_id)
+            if not job:
+                return False, ['Job not found']
+            job.remove_part(part_id)
+            return True, []
+        except ValueError as e:
+            return False, [str(e)]
+        except Exception as e:
+            self.logger.error(f"Failed to remove part: {e}")
+            db.session.rollback()
+            return False, ['System error, please try again']    
 
     def mark_job_as_completed(self, job_id: int) -> Tuple[bool, List[str]]:
         """

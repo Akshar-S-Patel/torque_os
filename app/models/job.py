@@ -159,6 +159,7 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         """Get services for this job"""
         return [
             {
+                'service_id': js.service_id,
                 'service_name': js.service.service_name,
                 'qty': js.qty,
                 'cost': float(js.service.cost),
@@ -171,6 +172,7 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         """Get parts for this job"""
         return [
             {
+                'part_id': jp.part_id,
                 'part_name': jp.part.part_name,
                 'qty': jp.qty,
                 'cost': float(jp.part.cost),
@@ -209,6 +211,42 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         db.session.add(job_part)
         self._update_total_cost()
         db.session.commit()
+        return True
+
+    def remove_service(self, service_id: int) -> bool:
+        """Remove a service from this job"""
+        if self.completed:
+            raise ValueError("Cannot modify a completed job")
+        job_service = next((js for js in self.job_services if js.service_id == service_id), None)
+        if not job_service:
+            raise ValueError(f"Service {service_id} not found on this job")
+        db.session.delete(job_service)
+        self.job_services.remove(job_service)
+        self._update_total_cost()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            self.job_services.append(job_service)
+            raise
+        return True
+
+    def remove_part(self, part_id: int) -> bool:
+        """Remove a part from this job"""
+        if self.completed:
+            raise ValueError("Cannot modify a completed job")
+        job_part = next((jp for jp in self.job_parts if jp.part_id == part_id), None)
+        if not job_part:
+            raise ValueError(f"Part {part_id} not found on this job")
+        db.session.delete(job_part)
+        self.job_parts.remove(job_part)
+        self._update_total_cost()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            self.job_parts.append(job_part)
+            raise
         return True
 
     def mark_as_completed(self) -> bool:

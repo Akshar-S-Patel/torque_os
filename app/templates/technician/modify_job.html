@@ -189,7 +189,14 @@ Modify Job #{{ data.job_id }} - TorqueOS
                                     <h6 class="mb-1">{{ service.service_name }}</h6>
                                     <small class="text-muted">Quantity: {{ service.qty }}</small>
                                 </div>
-                                <span class="text-white badge bg-info rounded-pill">{{ service.qty }}</span>
+                                <div class="d-flex gap-1">
+                                    <span class="text-white badge bg-info rounded-pill">{{ service.qty }}</span>
+                                    <form method="POST" action="{{ url_for('technician.remove_service_from_job', job_id=data.job_id, service_id=service.service_id) }}">
+                                        <button type="submit" class="text-white badge bg-danger border-0" title="Remove Service" {% if job_completed %}disabled{% endif %}>
+                                            <i class="ti ti-bookmark-off"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -266,7 +273,14 @@ Modify Job #{{ data.job_id }} - TorqueOS
                                     <h6 class="mb-1">{{ part.part_name }}</h6>
                                     <small class="text-muted">Quantity: {{ part.qty }}</small>
                                 </div>
-                                <span class="text-white badge bg-success rounded-pill">{{ part.qty }}</span>
+                                <div class="d-flex gap-1">
+                                    <span class="text-white badge bg-success rounded-pill">{{ part.qty }}</span>
+                                    <form method="POST" action="{{ url_for('technician.remove_part_from_job', job_id=data.job_id, part_id=part.part_id) }}">
+                                        <button type="submit" class="text-white badge bg-danger border-0" title="Remove Part" {% if job_completed %}disabled{% endif %}>
+                                            <i class="ti ti-bookmark-off"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -283,8 +297,29 @@ Modify Job #{{ data.job_id }} - TorqueOS
     </div>
 </div>
 
+<div class="row m-0 mb-4 bg-primary p-3 rounded text-white">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="ti ti-circle-check me-2"></i>
+                    Done adding services and parts?
+                </h1>
+                <p class="text-muted mb-0">Save added services and parts to this job</p>
+            </div>
+            <div>
+                <a href="{{ url_for('technician.current_jobs') }}" class="btn btn-success" onclick="sessionStorage.removeItem('scrollPos')" {% if data.completed %}disabled{% endif %}>
+                    <i class="ti ti-bookmark-plus me-1"></i>
+                    Save and Return to Jobs
+                </a>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
 <!-- Complete Job Section -->
-{% if not data.completed %}
+
 <div class="row">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
@@ -295,6 +330,7 @@ Modify Job #{{ data.job_id }} - TorqueOS
                 </h5>
             </div>
             <div class="card-body">
+                {% if not data.completed %}
                 <div class="row">
                     <div class="col-md-8">
                         <div class="alert alert-warning border-0 mb-3">
@@ -302,8 +338,7 @@ Modify Job #{{ data.job_id }} - TorqueOS
                                 <i class="ti ti-alert-triangle me-2"></i>
                                 <div>
                                     <strong>Important Notice</strong>
-                                    <p class="mb-0">Once this job is marked as completed, no further modifications can
-                                        be made. Please ensure all services and parts have been added before completing.
+                                    <p class="mb-0">Once this job is marked as completed, no further modifications can be made. Please ensure all services and parts have been added before completing.
                                     </p>
                                 </div>
                             </div>
@@ -324,8 +359,39 @@ Modify Job #{{ data.job_id }} - TorqueOS
                     </div>
                 </div>
             </div>
+                    {% else %}
+                    <div class="alert alert-success border-0 mb-0">
+                        <div class="d-flex">
+                            <i class="ti ti-circle-check me-2"></i>
+                            <div>
+                                <p class="mb-0">This job has been already marked as completed.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Save scroll position before form submit
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+        sessionStorage.setItem('scrollPos', window.scrollY);
+    });
+});
+
+// Restore scroll position on page load
+window.addEventListener('load', function() {
+    const scrollPos = sessionStorage.getItem('scrollPos');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('scrollPos');
+    }
+});
+
+</script>
 {% endblock %}
