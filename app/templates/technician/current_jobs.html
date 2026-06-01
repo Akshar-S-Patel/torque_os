@@ -161,8 +161,8 @@
                                     <i class="ti ti-user text-primary"></i>
                                 </div>
                                 <div>
-                                    <div class="fw-semibold">{{ record.first_name }} {{ record.family_name }}</div>
-                                    <small class="text-muted">ID: #{{ record.customer_id }}</small>
+                                    <div class="fw-semibold">{{ record.customer_rel.first_name }} {{ record.customer_rel.family_name }}</div>
+                                    <small class="text-muted">ID: #{{ record.customer_rel.customer_id }}</small>
                                 </div>
                             </div>
                         </td>
@@ -203,13 +203,19 @@
                                     <i class="ti ti-pencil"></i>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-info"
-                                    onclick="viewJobDetails({{ record.job_id }})" title="Quick View">
+                                    onclick='viewJobDetails({{ record.to_dict() | tojson | safe }})' title="Quick View">
                                     <i class="ti ti-eye"></i>
                                 </button>
                                 {% if session.current_role in ('owner', 'admin') and record.paid == 0 %}
                                 <button type="button" class="btn btn-sm btn-outline-success"
-                                    onclick="markAsPaid({{ record.job_id }})" title="Mark as Paid">
+                                    onclick="handleDirectPost('{{ url_for('administrator.pay_single_bill', job_id=record.job_id) }}', 'Are you sure you want to mark this job as paid? This action cannot be undone.')" title="Mark as Paid">
                                     <i class="ti ti-credit-card"></i>
+                                </button>
+                                {% endif %}
+                                {% if not record.completed %}
+                                <button type="button" class="btn btn-sm btn-outline-warning"
+                                    onclick="handleDirectPost('{{ url_for('technician.complete_job', job_id=record.job_id) }}', 'Are you sure you want to mark this job as completed? This action cannot be undone.')" title="Mark as Completed">
+                                    <i class="ti ti-circle-check"></i>
                                 </button>
                                 {% endif %}
                             </div>
@@ -355,7 +361,7 @@
             rows.forEach(row => {
                 const customerName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
                 const jobId = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                const paymentStatus = row.querySelector('.text-white badge').textContent.toLowerCase();
+                const paymentStatus = row.querySelector('.text-white.badge').textContent.toLowerCase();
 
                 let matchesSearch = true;
                 let matchesStatus = true;
@@ -425,55 +431,105 @@
         window.location.reload();
     }
 
-    function viewJobDetails(jobId) {
-        const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+    function viewJobDetails(job) {
+        // If modal instance already exists, get it, otherwise create a new one
+        const modalElement = document.getElementById('jobDetailsModal');
+        let modal = bootstrap.Modal.getInstance(modalElement);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalElement);
+        }
+        
         const content = document.getElementById('jobDetailsContent');
         const editBtn = document.getElementById('editJobBtn');
 
-        // Show loading state
-        content.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border"></div>
-            <p class="mt-2">Loading job details...</p>
-        </div>
-    `;
+        // Set edit button link using the job_id
+        editBtn.href = `/technician/jobs/${job.job_id}/modify`;
 
-        // Set edit button link
-        editBtn.href = `/job/${jobId}`;
+        // 1. Determine Progress Status
+        const progressBadge = job.completed 
+            ? `<span class="badge bg-success text-white me-1"><i class="ti ti-clock me-1"></i>Completed</span>`
+            : `<span class="badge bg-warning text-white me-1"><i class="ti ti-clock me-1"></i>In Progress</span>`;
+
+        // 2. Determine Payment Status
+        const paymentBadge = job.paid 
+            ? `<span class="badge bg-success text-white"><i class="ti ti-credit-card me-1"></i>Paid</span>`
+            : `<span class="badge bg-danger text-white"><i class="ti ti-credit-card me-1"></i>Unpaid</span>`;
+
+        // 3. Format Overdue Status
+        const overdueWarning = job.is_overdue 
+            ? `<p class="mb-1 text-danger fw-bold"><i class="ti ti-alert-circle me-1"></i>Overdue (${job.days_since_job} days)</p>` 
+            : '';
+
+        // 4. Format Basic Data
+        const jobDate = job.job_date ? new Date(job.job_date).toLocaleDateString() : 'Unknown';
+        const totalCost = job.total_cost !== undefined && job.total_cost !== null 
+            ? parseFloat(job.total_cost).toFixed(2) 
+            : '0.00';
+        const assigneeStr = job.assigned_to 
+            ? `User ID: ${job.assigned_to}` 
+            : `<span class="text-muted">Not yet assigned</span>`;
+
+        // 5. Safely Extract & Format Phone and Email
+        // Checks both flat mapping and nested mapping just in case
+        const phone = job.phone || (job.customer_rel && job.customer_rel.phone);
+        const email = job.email || (job.customer_rel && job.customer_rel.email);
+
+        const phoneStr = phone 
+            ? `<a href="tel:${phone}" class="text-decoration-none">${phone}</a>` 
+            : `<span class="text-muted">No phone on file</span>`;
+            
+        const emailStr = email 
+            ? `<a href="mailto:${email}" class="text-decoration-none">${email}</a>` 
+            : `<span class="text-muted">No email on file</span>`;
+
+        // Render the modal content synchronously
+        content.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <h6 class="text-primary border-bottom pb-2">Job Information</h6>
+                <p class="mb-1"><strong>Job ID:</strong> #${job.job_id}</p>
+                <p class="mb-1"><strong>Status:</strong><br> ${progressBadge} ${paymentBadge}</p>
+                <p class="mb-1 mt-2"><strong>Created:</strong> ${jobDate}</p>
+                <p class="mb-1"><strong>Assigned to:</strong> ${assigneeStr}</p>
+                ${overdueWarning}
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary border-bottom pb-2">Customer Information</h6>
+                <p class="mb-1"><strong>Customer ID:</strong> #${job.customer_id || 'N/A'}</p>
+                <p class="mb-1"><strong>Name:</strong> ${job.first_name || ''} ${job.family_name || ''}</p>
+                <p class="mb-1"><strong>Phone:</strong> ${phoneStr}</p>
+                <p class="mb-1"><strong>Email:</strong> ${emailStr}</p>
+            </div>
+        </div>
+        
+        <div class="bg-light p-3 rounded mt-3 border">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Financial Overview</h2>
+                    <small class="text-muted">Total includes all parts and services</small>
+                </div>
+                <div class="text-end">
+                    <span class="fs-4 fw-bold ${job.paid ? 'text-success' : 'text-danger'}">$${totalCost}</span>
+                </div>
+            </div>
+        </div>
+        `;
 
         // Show modal
         modal.show();
-
-        // Simulate loading job details (replace with actual API call)
-        setTimeout(() => {
-            content.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Job Information</h6>
-                    <p><strong>Job ID:</strong> #${jobId}</p>
-                    <p><strong>Status:</strong> <span class="text-white badge bg-warning">In Progress</span></p>
-                    <p><strong>Created:</strong> Today</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Customer Information</h6>
-                    <p><strong>Name:</strong> Loading...</p>
-                    <p><strong>Phone:</strong> Loading...</p>
-                    <p><strong>Email:</strong> Loading...</p>
-                </div>
-            </div>
-            <hr>
-            <h6>Services & Parts</h6>
-            <p class="text-muted">Service and parts information will be loaded here...</p>
-        `;
-        }, 1000);
     }
 
-    function markAsPaid(jobId) {
-        if (confirm('Mark this job as paid? This action cannot be undone.')) {
-            // Implementation for marking as paid
-            console.log('Marking job', jobId, 'as paid');
-            // You can implement the actual API call here
-        }
+    function handleDirectPost(url, confirmationMessage) {
+    if (confirm(confirmationMessage)) {
+        // Create a temporary hidden form
+        const tempForm = document.createElement('form');
+        tempForm.method = 'POST';
+        tempForm.action = url;
+
+        // Append to body and submit seamlessly
+        document.body.appendChild(tempForm);
+        tempForm.submit();
     }
+}
 </script>
 {% endblock %}
