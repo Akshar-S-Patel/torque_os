@@ -35,7 +35,7 @@
                     <span class="text-white badge bg-warning-lt me-2"><i class="ti ti-clock"></i></span>
                     <div class="subheader">Active Jobs</div>
                 </div>
-                <div class="h1 mb-0">{{ active_jobs|default(0) }}</div>
+                <div class="h1 mb-0">{{ job_stats.pending_jobs|default(0) }}</div>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
                     <span class="text-white badge bg-info-lt me-2"><i class="ti ti-calendar"></i></span>
                     <div class="subheader">Today's Jobs</div>
                 </div>
-                <div class="h1 mb-0">{{ todays_jobs|default(0) }}</div>
+                <div class="h1 mb-0">{{ job_stats.total_jobs|default(0) }}</div>
             </div>
         </div>
     </div>
@@ -57,7 +57,7 @@
                     <span class="text-white badge bg-success-lt me-2"><i class="ti ti-circle-check"></i></span>
                     <div class="subheader">Completed This Week</div>
                 </div>
-                <div class="h1 mb-0">{{ completed_this_week|default(0) }}</div>
+                <div class="h1 mb-0">{{ job_stats.completed_jobs|default(0) }}</div>
             </div>
         </div>
     </div>
@@ -106,7 +106,7 @@
                                 <i class="ti ti-user text-primary"></i>
                             </div>
                             <div>
-                                <div class="fw-semibold">{{ job.first_name }} {{ job.family_name }}</div>
+                                <div class="fw-semibold">{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</div>
                             </div>
                         </div>
                     </td>
@@ -199,7 +199,7 @@
                         </a>
                     </td>
                     <td>
-                        <div class="fw-semibold">{{ job.first_name }} {{ job.family_name }}</div>
+                        <div class="fw-semibold">{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</div>
                     </td>
                     <td>
                         {% if job.completed %}

@@ -406,8 +406,8 @@ def dashboard():
         return render_template('technician/dashboard.html',
                              job_stats=job_stats,
                              recent_jobs=recent_jobs[:5],
-                             today_jobs=today_jobs,
-                             current_date=today)
+                             todays_schedule=today_jobs,
+                             )
 
     except Exception as e:
         logger.error(f"Technician dashboard loading failed: {e}")
@@ -415,8 +415,7 @@ def dashboard():
         return render_template('technician/dashboard.html',
                              job_stats={},
                              recent_jobs=[],
-                             today_jobs=[],
-                             current_date=date.today())
+                             todays_schedule=[],)
 
 
 # API endpoints

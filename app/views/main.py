@@ -12,6 +12,7 @@ from app.utils.decorators import handle_database_errors, log_function_call
 from app.utils.validators import validate_customer_data, sanitize_input
 from app.utils.security import require_auth, InputSanitizer, SQLInjectionProtection
 from app.utils.error_handler import ValidationError, BusinessLogicError
+from datetime import date
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -96,36 +97,48 @@ def dashboard():
     try:
         user_type = session.get('current_role', 'technician')
 
-        # Select template based on role
-        if user_type in ('owner', 'admin'):
-            template = 'administrator/dashboard.html'
-        else:
-            template = 'technician/dashboard.html'
-
         # Get statistics
         job_stats = job_service.get_job_statistics()
-        billing_stats = billing_service.get_billing_statistics()
-
-        # Get recent activities
-        recent_jobs, _, _ = job_service.get_current_jobs(page=1, per_page=10)
-        overdue_bills = billing_service.get_overdue_bills()
-
-        return render_template(template,
-                             user_type=user_type,
+            
+        # Show template based on role
+        if user_type in ('owner', 'admin'):
+            billing_stats = billing_service.get_billing_statistics()
+            overdue_bills = billing_service.get_overdue_bills()
+            recent_jobs = job_service.get_unpaid_and_pending_jobs()
+            total_customers = len(customer_service.get_all_customers())
+            customers_with_unpaid = customer_service.get_customers_with_filter(has_unpaid=True)
+            customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
+            return render_template('administrator/dashboard.html',
                              job_stats=job_stats,
                              billing_stats=billing_stats,
+                             total_customers=total_customers,
+                             customers_with_unpaid=len(customers_with_unpaid),
+                             customers_with_overdue=len(customers_with_overdue),
                              recent_jobs=recent_jobs,
-                             overdue_bills=overdue_bills)
+                             overdue_bills=overdue_bills,
+                             current_date=date.today())
+        
+        today = date.today()
+        recent_jobs, _, _ = job_service.get_current_jobs(page=1, per_page=10)
+        #TODO: filter today's schedule for currently assigned technician
+        today_jobs = [job for job in recent_jobs
+                     if job.job_date == today or
+                        (isinstance(job.job_date, str) and
+                         job.job_date.startswith(str(today)))]
+
+        return render_template('technician/dashboard.html',
+                             job_stats=job_stats,
+                             recent_jobs=recent_jobs[:5],
+                             todays_schedule=today_jobs,
+                             )
 
     except Exception as e:
         logger.error(f"Dashboard loading failed: {e}")
         flash('Failed to load dashboard', 'error')
         return render_template('technician/dashboard.html',
-                             user_type='technician',
                              job_stats={},
-                             billing_stats={},
                              recent_jobs=[],
-                             overdue_bills=[])
+                             todays_schedule=[],)
 
 
 @main_bp.route('/api/search/customers')
