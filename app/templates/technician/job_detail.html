@@ -265,6 +265,12 @@
                                 <i class="ti ti-circle-check me-1"></i>
                                 Paid
                             </span>
+                            {% elif data.is_overdue == 1 %}
+                            <span class="text-white badge bg-danger">
+                                <i class="ti ti-alert-triangle me-1"></i>
+                                Bill Overdue
+                            </span>
+                            <span class="extra-small d-block text-danger"><i class="ti ti-alert-circle me-1"></i>Overdue ({{data.days_since_job}} days)</span>
                             {% else %}
                             <span class="text-white badge bg-warning">
                                 <i class="ti ti-clock me-1"></i>

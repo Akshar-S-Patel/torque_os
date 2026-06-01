@@ -87,8 +87,8 @@ Customer Management - Administrator Portal
         <div class="col-12">
             <div class="card">
                 <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-users"></i>
                         Customer List & Job Scheduling
                     </h5>
@@ -141,7 +141,7 @@ Customer Management - Administrator Portal
                                                 value="{{ customer.customer_id }}" class="form-check-input">
                                         </td>
                                         <td>
-                                            <span class="text-white badge bg-light">#{{ customer.customer_id }}</span>
+                                            <span class="text-black badge bg-light">#{{ customer.customer_id }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -162,9 +162,10 @@ Customer Management - Administrator Portal
                                             </span>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline-info">
+                                            <a href="{{ url_for('main.customer_detail', customer_id=customer.customer_id) }}"
+                                                class="btn btn-sm btn-outline-primary" title="View Details">
                                                 <i class="ti ti-eye"></i>
-                                            </button>
+                                            </a>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -195,8 +196,8 @@ Customer Management - Administrator Portal
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header" style="background: var(--info); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                <div class="card-header" style="background: var(--info); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-briefcase"></i>
                         Jobs Overview
                     </h5>
@@ -225,8 +226,8 @@ Customer Management - Administrator Portal
                                         <div class="d-flex align-items-center">
                                             <i class="ti ti-user text-primary me-2"></i>
                                             <div>
-                                                <strong>{{ job.first_name }} {{ job.family_name }}</strong>
-                                                <small class="text-muted d-block">ID: {{ job.customer_id }}</small>
+                                                <strong>{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</strong>
+                                                <small class="text-muted d-block">ID: {{ job.customer_rel.customer_id }}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -259,9 +260,15 @@ Customer Management - Administrator Portal
                                             <i class="ti ti-credit-card me-1"></i>
                                             Paid
                                         </span>
-                                        {% else %}
+                                        {% elif job.is_overdue == 1 %}
                                         <span class="text-white badge bg-danger">
                                             <i class="ti ti-alert-triangle me-1"></i>
+                                            Bill Overdue
+                                        </span>
+                                        <span style="font-size: x-small;" class="d-block text-danger"><i class="ti ti-alert-circle me-1"></i>Overdue ({{job.days_since_job}} days)</span>
+                                        {% else %}
+                                        <span class="text-white badge bg-warning">
+                                            <i class="ti ti-clock me-1"></i>
                                             Unpaid
                                         </span>
                                         {% endif %}

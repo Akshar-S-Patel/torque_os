@@ -136,7 +136,7 @@ def customer_list(page=1, per_page=20):
         customers_page = customers[start:end]
         total_pages = (total + per_page - 1) // per_page
         
-        recent_jobs, _, _ = job_service.get_current_jobs()
+        recent_jobs = job_service.get_unpaid_and_pending_jobs()
 
         return render_template('administrator/customer_list.html',
                              customers=customers_page,
