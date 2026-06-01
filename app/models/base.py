@@ -53,6 +53,12 @@ class BaseModelMixin:
     def count(cls: Type[T], **filters) -> int:
         """Count records matching filters"""
         query = db.select(db.func.count()).select_from(cls)
+        
+        # Apply tenant scope
+        tenant_id = cls._get_current_tenant_id()
+        if tenant_id and hasattr(cls, 'tenant_id'):
+            query = query.where(cls.tenant_id == tenant_id)
+        
         for key, value in filters.items():
             if hasattr(cls, key):
                 query = query.where(getattr(cls, key) == value)

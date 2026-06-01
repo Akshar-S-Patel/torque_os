@@ -11,6 +11,9 @@ from app.services.job_service import JobService
 from app.services.billing_service import BillingService
 from app.utils.decorators import handle_database_errors, log_function_call, validate_pagination
 from app.utils.validators import sanitize_input, validate_positive_integer, validate_service_data, validate_part_data
+from app.models.service import Service
+from app.models.part import Part
+from datetime import date
 
 # Create blueprint
 administrator_bp = Blueprint('administrator', __name__)
@@ -55,7 +58,7 @@ def dashboard():
         customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
 
         # Get recent activities
-        recent_jobs, _, _ = job_service.get_current_jobs(page=1, per_page=5)
+        recent_jobs = job_service.get_unpaid_and_pending_jobs()
         overdue_bills = billing_service.get_overdue_bills()[:5]
 
         return render_template('administrator/dashboard.html',
@@ -80,6 +83,14 @@ def dashboard():
                              recent_jobs=[],
                              overdue_bills=[],
                              current_date=date.today())
+
+
+@administrator_bp.route('/dashboard/revenue')
+@handle_database_errors
+def revenue_by_year():
+    year = request.args.get('year', date.today().year, type=int)
+    monthly_revenue = billing_service.get_monthly_revenue(year)
+    return jsonify({'monthly_revenue': monthly_revenue})
 
 
 @administrator_bp.route('/customers')
@@ -124,6 +135,8 @@ def customer_list(page=1, per_page=20):
         end = start + per_page
         customers_page = customers[start:end]
         total_pages = (total + per_page - 1) // per_page
+        
+        recent_jobs, _, _ = job_service.get_current_jobs()
 
         return render_template('administrator/customer_list.html',
                              customers=customers_page,
@@ -132,7 +145,11 @@ def customer_list(page=1, per_page=20):
                              total=total,
                              total_pages=total_pages,
                              filter_type=filter_type,
-                             search_query=search_query)
+                             search_query=search_query,
+                             jobs=recent_jobs,
+                             services=Service.get_active_sorted(),
+                             parts=Part.get_active_sorted(),
+                             today=date.today().isoformat())
 
     except Exception as e:
         logger.error(f"Customer management page loading failed: {e}")

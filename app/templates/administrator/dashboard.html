@@ -37,7 +37,7 @@
                         <span class="text-white badge bg-primary-lt me-2"><i class="ti ti-briefcase"></i></span>
                         <div class="subheader">Total Jobs</div>
                     </div>
-                    <div class="h1 mb-0">{{ job_stats.total_jobs | default(0) }}</div>
+                    <div class="h1 mb-0">{{ job_stats.total_jobs|default(0) }}</div>
                 </div>
             </div>
         </div>
@@ -80,12 +80,22 @@
     <div class="row mb-4">
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                <!-- Year selector -->
+                <div class="card-header d-flex justify-content-between align-items-center"
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-chart-bar"></i>
                         Monthly Revenue
                     </h5>
+                    <select id="yearSelector" class="form-select form-select-sm w-auto text-dark">
+                        {% set current_year = current_date.year %}
+                        {% for i in range(5) %}
+                        {% set y = current_year - i %}
+                        <option value="{{ y }}" {% if i == 0 %}selected{% endif %}>
+                            {{ y }} {% if i == 0 %}(Current Year){% else %}({{ i }} year{{ 's' if i > 1 else '' }} ago){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="card-body p-4">
                     <canvas id="revenueChart" height="300"></canvas>
@@ -94,14 +104,16 @@
         </div>
         <div class="col-lg-4">
             <div class="card">
-                <div class="card-header" style="background: var(--info); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                <div class="card-header" style="background: var(--info); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-chart-pie"></i>
                         Job Status
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <canvas id="statusChart" height="300"></canvas>
+                    <div style="position: relative; height: 250px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -112,13 +124,13 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-activity"></i>
                         Recent Activity
                     </h5>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 pt-0">
                     {% if recent_jobs %}
                     <div class="list-group list-group-flush">
                         {% for job in recent_jobs[:5] %}
@@ -127,22 +139,17 @@
                                 <i class="ti ti-tool text-primary"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="fw-semibold">Job #{{ job.job_id }}</div>
-                                <small class="text-muted">{{ job.first_name }} {{ job.family_name }} &mdash; {{
+                                <div class="fw-semibold">
+                                    {{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}
+                                </div>
+                                <small>Job #{{ job.job_id }} &mdash; {{
                                     job.job_date }}</small>
                             </div>
                             <div>
-                                {% if job.completed == 1 %}
-                                <span class="text-white badge bg-success">
-                                    <i class="ti ti-circle-check me-1"></i>
-                                    Completed
-                                </span>
-                                {% else %}
-                                <span class="text-white badge bg-warning">
-                                    <i class="ti ti-clock me-1"></i>
-                                    In Progress
-                                </span>
-                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-info"
+                                onclick='viewJobDetails({{ job.to_dict() | tojson | safe }})' title="Quick View">
+                                    <i class="ti ti-eye"></i>
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
@@ -158,8 +165,8 @@
         </div>
         <div class="col-lg-5">
             <div class="card">
-                <div class="card-header" style="background: var(--danger); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                <div class="card-header" style="background: var(--danger); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-alert-triangle"></i>
                         Overdue Alerts
                     </h5>
@@ -174,7 +181,7 @@
                                     <i class="ti ti-alert-circle text-danger"></i>
                                 </div>
                                 <div>
-                                    <div class="fw-semibold">{{ bill.first_name }} {{ bill.family_name }}</div>
+                                    <div class="fw-semibold">{{ bill.customer_rel.first_name }} {{ bill.customer_rel.family_name }}</div>
                                     <small class="text-muted">Job #{{ bill.job_id }}</small>
                                 </div>
                             </div>
@@ -194,20 +201,64 @@
         </div>
     </div>
 </div>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="ti ti-info-circle"></i>Job Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border"></div>
+                    <p class="mt-2">Loading job details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="editJobBtn">Edit Job</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block admin_extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
     const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
-        new Chart(revenueCtx, {
+    let revenueChart = null;
+    const noDataPlugin = {
+        id: 'noData',
+        afterDraw(chart) {
+            const hasData = chart.data.datasets[0].data.some(v => v > 0);
+            if (!hasData) {
+                const { ctx, chartArea: { left, top, width, height } } = chart;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '16px sans-serif';
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('No revenue data for this year', left + width / 2, top + height / 2);
+                ctx.restore();
+            }
+        }
+    };
+
+    function buildRevenueChart(data) {
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(revenueCtx, {
             type: 'bar',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 datasets: [{
                     label: 'Revenue ($)',
-                    data: {{ billing_stats.monthly_revenue | default([0,0,0,0,0,0,0,0,0,0,0,0]) | tojson }},
+                    data: data,
                     backgroundColor: 'rgba(37, 99, 235, 0.8)',
                     borderColor: 'rgba(37, 99, 235, 1)',
                     borderWidth: 1,
@@ -217,38 +268,166 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                layout: {
+                    padding: {
+                        top: 25
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        color: '#374151',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: v => v > 0 ? '$' + v.toFixed(0) : ''
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, ticks: { callback: function(v) { return '$' + v; } } }
+                    y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
                 }
-            }
+            },
+            plugins: [ChartDataLabels, noDataPlugin]
         });
     }
+
+    // Initial load
+    buildRevenueChart({{ billing_stats.monthly_revenue | tojson }});
+
+    // Year change
+    document.getElementById('yearSelector').addEventListener('change', function() {
+        fetch(`/administrator/dashboard/revenue?year=${this.value}`)
+            .then(r => r.json())
+            .then(data => buildRevenueChart(data.monthly_revenue))
+            .catch(() => console.error('Failed to load revenue data'));
+    });
 
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
         new Chart(statusCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Completed', 'In Progress', 'Pending'],
+                labels: ['Completed', 'Pending', 'Paid', 'Unpaid', 'Overdue'],
                 datasets: [{
                     data: [
-                        {{ job_stats.completed | default(0) }},
-                        {{ job_stats.in_progress | default(0) }},
-                        {{ job_stats.pending | default(0) }}
+                        {{ job_stats.completed_jobs | default(0) }},
+                        {{ job_stats.pending_jobs | default(0) }},
+                        {{ job_stats.total_jobs - job_stats.unpaid_jobs | default(0) }},
+                        {{ job_stats.unpaid_jobs | default(0) }},
+                        {{ job_stats.overdue_jobs | default(0) }}
                     ],
-                    backgroundColor: ['#16a34a', '#f59e0b', '#6b7280'],
+                    backgroundColor: ['#14b8a6', '#f59e0b', '#16a34a','#f97316', '#ef4444'],
                     borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: { display: false },
+                    tooltip: {
+                        position: 'nearest',
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
                 cutout: '65%'
             }
         });
     }
 });
+
+function viewJobDetails(job) {
+    // If modal instance already exists, get it, otherwise create a new one
+    const modalElement = document.getElementById('jobDetailsModal');
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) {
+        modal = new bootstrap.Modal(modalElement);
+    }
+    
+    const content = document.getElementById('jobDetailsContent');
+    const editBtn = document.getElementById('editJobBtn');
+
+    // Set edit button link using the job_id
+    editBtn.href = `/technician/jobs/${job.job_id}/modify`;
+
+    // 1. Determine Progress Status
+    const progressBadge = job.completed 
+        ? `<span class="badge bg-success text-white me-1"><i class="ti ti-clock me-1"></i>Completed</span>`
+        : `<span class="badge bg-warning text-white me-1"><i class="ti ti-clock me-1"></i>In Progress</span>`;
+
+    // 2. Determine Payment Status
+    const paymentBadge = job.paid 
+        ? `<span class="badge bg-success text-white"><i class="ti ti-credit-card me-1"></i>Paid</span>`
+        : `<span class="badge bg-danger text-white"><i class="ti ti-credit-card me-1"></i>Unpaid</span>`;
+
+    // 3. Format Overdue Status
+    const overdueWarning = job.is_overdue 
+        ? `<p class="mb-1 text-danger fw-bold"><i class="ti ti-alert-circle me-1"></i>Overdue (${job.days_since_job} days)</p>` 
+        : '';
+
+    // 4. Format Basic Data
+    const jobDate = job.job_date ? new Date(job.job_date).toLocaleDateString() : 'Unknown';
+    const totalCost = job.total_cost !== undefined && job.total_cost !== null 
+        ? parseFloat(job.total_cost).toFixed(2) 
+        : '0.00';
+    const assigneeStr = job.assigned_to 
+        ? `User ID: ${job.assigned_to}` 
+        : `<span class="text-muted">Not yet assigned</span>`;
+
+    // 5. Safely Extract & Format Phone and Email
+    // Checks both flat mapping and nested mapping just in case
+    const phone = job.phone || (job.customer_rel && job.customer_rel.phone);
+    const email = job.email || (job.customer_rel && job.customer_rel.email);
+
+    const phoneStr = phone 
+        ? `<a href="tel:${phone}" class="text-decoration-none">${phone}</a>` 
+        : `<span class="text-muted">No phone on file</span>`;
+        
+    const emailStr = email 
+        ? `<a href="mailto:${email}" class="text-decoration-none">${email}</a>` 
+        : `<span class="text-muted">No email on file</span>`;
+
+    // Render the modal content synchronously
+    content.innerHTML = `
+    <div class="row mb-3">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <h6 class="text-primary border-bottom pb-2">Job Information</h6>
+            <p class="mb-1"><strong>Job ID:</strong> #${job.job_id}</p>
+            <p class="mb-1"><strong>Status:</strong><br> ${progressBadge} ${paymentBadge}</p>
+            <p class="mb-1 mt-2"><strong>Created:</strong> ${jobDate}</p>
+            <p class="mb-1"><strong>Assigned to:</strong> ${assigneeStr}</p>
+            ${overdueWarning}
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-primary border-bottom pb-2">Customer Information</h6>
+            <p class="mb-1"><strong>Customer ID:</strong> #${job.customer_id || 'N/A'}</p>
+            <p class="mb-1"><strong>Name:</strong> ${job.first_name || ''} ${job.family_name || ''}</p>
+            <p class="mb-1"><strong>Phone:</strong> ${phoneStr}</p>
+            <p class="mb-1"><strong>Email:</strong> ${emailStr}</p>
+        </div>
+    </div>
+    
+    <div class="bg-light p-3 rounded mt-3 border">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-0">Financial Overview</h2>
+                <small class="text-muted">Total includes all parts and services</small>
+            </div>
+            <div class="text-end">
+                <span class="fs-4 fw-bold ${job.paid ? 'text-success' : 'text-danger'}">$${totalCost}</span>
+            </div>
+        </div>
+    </div>
+    `;
+
+    // Show modal
+    modal.show();
+}
+
 </script>
 {% endblock %}

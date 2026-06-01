@@ -103,6 +103,25 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         return jobs, total
 
     @classmethod
+    def get_unpaid_and_pending_jobs(cls) -> List['Job']:
+        """Get unpaid and pending jobs, scoped to tenant"""
+        from app.models.customer import Customer
+
+        filters = [db.or_(cls.paid == False, cls.completed == False)]
+        tenant_id = cls._get_current_tenant_id()
+        if tenant_id:
+            filters.append(cls.tenant_id == tenant_id)
+
+        query = (
+            db.select(cls)
+            .where(and_(*filters))
+            .join(Customer, cls.customer == Customer.customer_id)
+            .order_by(Customer.first_name, Customer.family_name, cls.job_date.desc())
+        )
+
+        return list(db.session.execute(query).scalars())
+    
+    @classmethod
     def get_all_with_customer_info(cls) -> List['Job']:
         """Get all jobs with customer information loaded, scoped to tenant"""
         from app.models.customer import Customer
@@ -300,10 +319,13 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         data['days_since_job'] = self.days_since_job
         if self.total_cost:
             data['total_cost'] = float(self.total_cost)
+            
         if self.customer_rel:
             data['first_name'] = self.customer_rel.first_name
             data['family_name'] = self.customer_rel.family_name
             data['customer_id'] = self.customer_rel.customer_id
+            data['phone'] = self.customer_rel.phone
+            data['email'] = self.customer_rel.email
         return data
 
 

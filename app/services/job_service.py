@@ -43,7 +43,20 @@ class JobService:
         except Exception as e:
             self.logger.error(f"Failed to get current jobs: {e}")
             raise
+    
+    def get_unpaid_and_pending_jobs(self) -> List[Job]:
+        """
+        Get unpaid and pending jobs
 
+        Returns:
+            List[Job]: List of unpaid and pending jobs
+        """
+        try:
+            return Job.get_unpaid_and_pending_jobs()
+        except Exception as e:
+            self.logger.error(f"Failed to get unpaid and pending jobs: {e}")
+            raise
+    
     def get_job_by_id(self, job_id: int) -> Optional[Job]:
         """Get job by ID"""
         try:

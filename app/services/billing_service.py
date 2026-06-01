@@ -9,7 +9,7 @@ from flask import g
 from app.extensions import db
 from app.models.job import Job
 from app.models.customer import Customer
-
+from datetime import date
 
 class BillingService:
     """Billing service class"""
@@ -192,6 +192,22 @@ class BillingService:
                 db.func.coalesce(db.func.sum(db.case((Job.paid == False, Job.total_cost), else_=0)), 0).label('unpaid_amount')
             ).where(db.and_(*filters))
 
+            current_year = date.today().year
+            monthly_query = db.select(
+                db.func.extract('month', Job.job_date).label('month'),
+                db.func.coalesce(db.func.sum(db.case((Job.paid == True, Job.total_cost), else_=0)), 0).label('revenue')
+            ).where(
+                db.and_(
+                    *filters,
+                    db.func.extract('year', Job.job_date) == current_year
+                )
+            ).group_by(db.func.extract('month', Job.job_date))
+
+            monthly_results = db.session.execute(monthly_query).all()
+            monthly_revenue = [0.0] * 12
+            for row in monthly_results:
+                monthly_revenue[int(row.month) - 1] = float(row.revenue)    
+                
             result = db.session.execute(query).one()
 
             overdue_bills = self.get_overdue_bills()
@@ -209,6 +225,8 @@ class BillingService:
                 'unpaid_amount': float(result.unpaid_amount),
                 'overdue_bills': len(overdue_bills),
                 'overdue_amount': overdue_amount,
+                'total_revenue': paid_amount,
+                'monthly_revenue': monthly_revenue,
                 'payment_rate': (paid_amount / total_amount * 100) if total_amount > 0 else 0
             }
 
@@ -216,6 +234,25 @@ class BillingService:
             self.logger.error(f"Failed to get billing statistics: {e}")
             return self._get_empty_billing_stats()
 
+    def get_monthly_revenue(self, year: int) -> list:
+        filters = [db.func.extract('year', Job.job_date) == year]
+        tenant_id = self._current_tenant_id()
+        if tenant_id:
+            filters.append(Job.tenant_id == tenant_id)
+
+        monthly_query = db.select(
+            db.func.extract('month', Job.job_date).label('month'),
+            db.func.coalesce(db.func.sum(
+                db.case((Job.paid == True, Job.total_cost), else_=0)
+            ), 0).label('revenue')
+        ).where(db.and_(*filters)).group_by(db.func.extract('month', Job.job_date))
+
+        results = db.session.execute(monthly_query).all()
+        monthly_revenue = [0.0] * 12
+        for row in results:
+            monthly_revenue[int(row.month) - 1] = float(row.revenue)
+        return monthly_revenue
+    
     def get_customers_with_unpaid_bills(self) -> List[Dict[str, Any]]:
         """Get customers with unpaid bills"""
         try:

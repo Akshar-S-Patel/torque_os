@@ -318,8 +318,66 @@ Modify Job #{{ data.job_id }} - TorqueOS
     </div>
 </div>
 
-<!-- Complete Job Section -->
+<!-- Complete Paid -->
+{% if session.current_role in ('owner', 'admin')%}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="ti ti-circle-check me-2"></i>
+                    Mark as Paid
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if not data.paid %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="alert alert-success border-0 mb-3">
+                            <div class="d-flex">
+                                <i class="ti ti-alert-triangle me-2"></i>
+                                <div>
+                                    <strong>Important Notice</strong>
+                                    <p class="mb-0">Once this job is marked as paid, no further modifications can be made. Please ensure all services and parts have been added before marking as paid.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-0">
+                            Current total cost: <strong>${{ "%.2f"|format(data.total_cost|float) }}</strong>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <form action="{{ url_for('administrator.pay_single_bill', job_id=data['job_id']) }}" method="POST"
+                            class="d-inline">
+                            <button type="submit" class="btn btn-success btn-lg"
+                                onclick="return confirm('Are you sure you want to mark this job as paid? This action cannot be undone.')">
+                                <i class="ti ti-circle-check me-2"></i>
+                                Mark as Paid
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+                    {% else %}
+                    <div class="alert alert-success border-0 mb-0">
+                        <div class="d-flex">
+                            <i class="ti ti-circle-check me-2"></i>
+                            <div>
+                                <p class="mb-0">This job has been already marked as paid.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
+
+<!-- Complete Job Section -->
 <div class="row">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
