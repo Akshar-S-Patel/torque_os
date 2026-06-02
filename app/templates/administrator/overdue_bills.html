@@ -122,15 +122,15 @@ Billing History & Overdue Bills - Administrator Portal
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="/administrator_overdue_bills" class="row g-3">
+                    <form method="POST" action="{{ url_for('administrator.overdue_bills') }}" class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label">Select Customer</label>
                             <select class="form-select" name="customer_choose_overduebill">
                                 <option value="">Show all bills...</option>
                                     {% for customer in customers %}
-                                    <option value="{{ customer.customer_id }} {{ customer.first_name }} {{ customer.family_name }}"
-                                            {% if selected_customer and customer.customer_id == selected_customer.customer_id %}selected{% endif %}>
-                                        {{ customer.first_name }} {{ customer.family_name }} (ID: {{ customer.customer_id }})
+                                        {% set loop_val = customer.customer_id ~ " " ~ customer.first_name ~ " " ~ customer.family_name %}
+                                        <option value="{{ loop_val }}" {% if chosen_customer_val == loop_val %}selected{% endif %}>
+                                            {{ customer.first_name }} {{ customer.family_name }} (ID: {{ customer.customer_id }})
                                         </option>
                                     {% endfor %}
                                 </select>
@@ -220,19 +220,19 @@ Billing History & Overdue Bills - Administrator Portal
                                 <thead class="table-light">
                                 <tr>
                                     <th>Job ID</th>
-                                        <th>Customer</th>
+                                    <th>Customer</th>
                                     <th>Job Date</th>
-                                        <th>Amount</th>
-                                        <th>Job Status</th>
+                                    <th>Amount</th>
+                                    <th>Job Status</th>
                                     <th>Payment Status</th>
-                                        <th>Actions</th>
+                                    <th>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                     {% for job in jobs %}
                                         {% if selected_customer %}
                                             {% if job.customer_id == selected_customer.customer_id %}
-                                            <tr class="{% if job.overdue %}table-warning{% elif job.paid == 1 %}table-light{% endif %}">
+                                            <tr class="{% if job.overdue %}table-danger{% elif job.paid %}table-success{% else %}table-warning{% endif %}">
                                                 <td>
                                                     <span class="text-white badge bg-primary">#{{ job.job_id }}</span>
                                                 </td>
@@ -301,7 +301,7 @@ Billing History & Overdue Bills - Administrator Portal
                                             {% endif %}
                                         {% else %}
                                             <!-- Display jobs for all customers -->
-                                            <tr class="{% if job.overdue %}table-warning{% elif job.paid == 1 %}table-light{% endif %}">
+                                            <tr class="{% if job.overdue %}table-danger{% elif job.paid %}table-success{% else %}table-warning{% endif %}">
                                                 <td>
                                                     <span class="text-white badge bg-primary">#{{ job.job_id }}</span>
                                                 </td>
@@ -378,16 +378,16 @@ Billing History & Overdue Bills - Administrator Portal
                             <h6 class="text-muted mb-2">Legend:</h6>
                             <div class="d-flex flex-wrap gap-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="table-warning" style="width: 20px; height: 20px; border-radius: 3px; margin-right: 8px;"></div>
-                                    <small>Overdue Bills</small>
+                                    <div style="width: 20px; height: 20px; background-color: #f8d7da; border: 1px solid #f5c2c7; border-radius: 4px; margin-right: 8px;"></div>
+                                    <small class="text-secondary">Overdue Bills</small>
                                 </div>
                                 <div class="d-flex align-items-center">
-                                    <div class="table-light" style="width: 20px; height: 20px; border-radius: 3px; margin-right: 8px; border: 1px solid #dee2e6;"></div>
-                                    <small>Paid Bills</small>
+                                    <div style="width: 20px; height: 20px; background-color: #d1e7dd; border: 1px solid #a3cfbb; border-radius: 4px; margin-right: 8px;"></div>
+                                    <small class="text-secondary">Paid Bills</small>
                                 </div>
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-white" style="width: 20px; height: 20px; border-radius: 3px; margin-right: 8px; border: 1px solid #dee2e6;"></div>
-                                    <small>Regular Bills</small>
+                                    <div style="width: 20px; height: 20px; background-color: #fff3cd; border: 1px solid #fde59a; border-radius: 4px; margin-right: 8px;"></div>
+                                    <small class="text-secondary">Unpaid Bills</small>
                                 </div>
                             </div>
                         </div>

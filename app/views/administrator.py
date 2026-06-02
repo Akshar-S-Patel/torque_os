@@ -213,42 +213,52 @@ def billing_management():
                              billing_stats={})
 
 
-@administrator_bp.route('/overdue-bills')
+@administrator_bp.route('/overdue-bills', methods=['GET', 'POST'])
 @handle_database_errors
 @log_function_call
 def overdue_bills():
-    """Overdue bills page"""
+    """Billing History & Overdue bills page"""
     redirect_response = require_admin_login()
     if redirect_response:
         return redirect_response
 
     try:
-        # Get overdue days threshold
-        days_threshold = request.args.get('days', 14, type=int)
-        if days_threshold < 1:
-            days_threshold = 14
+        selected_customer = None
+        chosen_customer_val = None
 
-        # Get overdue bills
-        overdue_bills_list = billing_service.get_overdue_bills(days_threshold)
+        if request.method == 'POST':
+            chosen_customer_val = request.form.get('customer_choose_overduebill', '')
+        else:
+            chosen_customer_val = request.args.get('customer_choose_overduebill', '')
 
-        # Calculate total amount
-        total_overdue_amount = sum(float(bill.get('total_cost', 0)) for bill in overdue_bills_list)
+        customers = customer_service.get_all_customers()
+        
+        # If a filter selection exists, isolate the customer ID (first word of the composite value string)
+        if chosen_customer_val and chosen_customer_val.strip() != '':
+            try:
+                target_id = int(chosen_customer_val.split()[0])
+                # Find matching customer object across dataset
+                selected_customer = next((c for c in customers if c.customer_id == target_id), None)
+            except (ValueError, IndexError):
+                pass
+
+        all_billing_entries = billing_service.get_all_bills_with_status()
 
         return render_template('administrator/overdue_bills.html',
-                             overdue_bills=overdue_bills_list,
-                             total_overdue_amount=total_overdue_amount,
-                             days_threshold=days_threshold,
-                             total_count=len(overdue_bills_list))
+                             jobs=all_billing_entries,
+                             customers=customers,
+                             selected_customer=selected_customer,
+                             chosen_customer_val=chosen_customer_val)
 
     except Exception as e:
-        logger.error(f"Overdue bills page loading failed: {e}")
-        flash('Failed to load overdue bills page', 'error')
+        logger.error(f"Billing history page loading failed: {e}")
+        flash('Failed to load billing details', 'error')
+        # Empty array fallbacks to prevent Jinja engine structural layout breaks
         return render_template('administrator/overdue_bills.html',
-                             overdue_bills=[],
-                             total_overdue_amount=0,
-                             days_threshold=14,
-                             total_count=0)
-
+                             jobs=[],
+                             customers=[],
+                             selected_customer=None,
+                             chosen_customer_val='')
 
 @administrator_bp.route('/pay-bills', methods=['GET'])
 @handle_database_errors
