@@ -46,7 +46,7 @@ Billing Management - Administrator Portal
                         <span class="text-white badge bg-danger-lt me-2"><i class="ti ti-alert-triangle"></i></span>
                         <div class="subheader">Unpaid Bills</div>
                     </div>
-                    <div class="h1 mb-0">{{ customer_info|length }}</div>
+                    <div class="h1 mb-0">{{ unpaid_bills|length }}</div>
                 </div>
             </div>
         </div>
@@ -58,7 +58,7 @@ Billing Management - Administrator Portal
                         <div class="subheader">Total Outstanding</div>
                     </div>
                     <div class="h1 mb-0">
-                        ${{ "%.2f"|format(customer_info|sum(attribute='total_cost')|float) }}
+                        ${{ "%.2f"|format(unpaid_bills|sum(attribute='total_cost')|float) }}
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@ Billing Management - Administrator Portal
                         <div class="subheader">Completed Jobs</div>
                     </div>
                     <div class="h1 mb-0">
-                        {{ customer_info|selectattr('completed')|list|length }}
+                        {{ unpaid_bills|selectattr('completed')|list|length }}
                     </div>
                 </div>
             </div>
@@ -98,13 +98,14 @@ Billing Management - Administrator Portal
                         <i class="ti ti-filter"></i>
                         Filter by Customer
                     </label>
-                    <form method="post" class="d-flex gap-3 align-items-end" style="flex-grow: 1;">
-                        <select class="form-select" name="selected_customer" style="max-width: 400px;">
+                    <form method="get" class="d-flex gap-3 align-items-end" style="flex-grow: 1;">
+                        <select class="form-select" name="customer" style="max-width: 400px;">
                             <option value="">Show all customers...</option>
                             {% for customer in customers %}
-                            <option value="{{ customer.full_name if customer.full_name.strip() else 'none' }}">
-                                {{ customer.full_name if customer.full_name.strip() else 'Unnamed Customer' }}
-                            </option>
+                                {% set name_value = customer.full_name if customer.full_name.strip() else 'none' %}
+                                <option value="{{ name_value }}" {% if customer_name == name_value %}selected{% endif %}>
+                                    {{ customer.full_name if customer.full_name.strip() else 'Unnamed Customer' }}
+                                </option>
                             {% endfor %}
                         </select>
                         <button class="btn btn-primary" type="submit">
@@ -121,39 +122,40 @@ Billing Management - Administrator Portal
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header" style="background: var(--error); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                <div class="card-header" style="background: var(--error); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-credit-card"></i>
                         Unpaid Bills
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if customer_info %}
-                        <form method="post" action="/administrator_mark_paid">
+                    {% if unpaid_bills %}
+                        <form id="makeAsPaidForm" method="post">
                             <div class="table-responsive">
                                 <table class="table table-vcenter card-table">
                                     <thead class="table-light">
                                     <tr>
-                                            <th width="50">Select</th>
-                                            <th>Customer</th>
+                                            <th style="padding: 0.5rem;">Select</th>
+                                            <th style="min-width: 140px;">Customer</th>
                                             <th>Job Details</th>
                                             <th>Amount</th>
                                             <th>Status</th>
+                                            <th>Payment</th>
                                             <th>Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {% for customer in customer_info %}
+                                    {% for item in unpaid_bills %}
                                     <tr>
                                             <td>
-                                                <input type="radio" name="bill_select" value="{{ customer.customer_id }}" class="form-check-input">
+                                                <input type="radio" name="bill_select" value="{{ item.job_id }}" class="form-check-input" required>
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <i class="ti ti-user text-primary me-2"></i>
                                                     <div>
-                                                        <strong>{{ customer.first_name }} {{ customer.family_name }}</strong>
-                                                        <small class="text-muted d-block">ID: {{ customer.customer_id }}</small>
+                                                        <strong>{{ item.customer_rel.first_name }} {{ item.customer_rel.family_name }}</strong>
+                                                        <small class="text-muted d-block">ID: {{ item.customer_rel.customer_id }}</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -161,10 +163,10 @@ Billing Management - Administrator Portal
                                                 <div class="d-flex align-items-center">
                                                     <i class="ti ti-briefcase text-info me-2"></i>
                                                     <div>
-                                                        <strong>Job #{{ customer.job_id }}</strong>
+                                                        <strong>Job #{{ item.job_id }}</strong>
                                                         <small class="text-muted d-block d-flex align-items-center gap-1">
                                                             <i class="ti ti-calendar"></i>
-                                                            {{ customer.job_date }}
+                                                            {{ item.job_date }}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -173,45 +175,51 @@ Billing Management - Administrator Portal
                                                 <div class="d-flex align-items-center">
                                                     <i class="ti ti-currency-dollar text-success me-2"></i>
                                                     <span class="h5 mb-0 text-success">
-                                                        ${{ "%.2f"|format(customer.total_cost|float) }}
+                                                        ${{ "%.2f"|format(item.total_cost|float) }}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="d-flex flex-column gap-1">
-                                                    {% if customer.completed %}
-                                                        <span class="text-white badge bg-success">
-                                                            <i class="ti ti-circle-check me-1"></i>
-                                                            Completed
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="text-white badge bg-warning">
-                                                            <i class="ti ti-clock me-1"></i>
-                                                            In Progress
-                                                        </span>
-                                                    {% endif %}
-                                                    {% if customer.paid %}
-                                                        <span class="text-white badge bg-success">
-                                                            <i class="ti ti-credit-card me-1"></i>
-                                                            Paid
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="text-white badge bg-danger">
-                                                            <i class="ti ti-alert-triangle me-1"></i>
-                                                            Unpaid
-                                                        </span>
-                                                    {% endif %}
-                                                </div>
+                                                {% if item.completed == 1 %}
+                                                <span class="text-white badge bg-success">
+                                                    <i class="ti ti-circle-check me-1"></i>
+                                                    Completed
+                                                </span>
+                                                {% else %}
+                                                <span class="text-white badge bg-warning">
+                                                    <i class="ti ti-clock me-1"></i>
+                                                    In Progress
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.paid == 1 %}
+                                                <span class="text-white badge bg-success">
+                                                    <i class="ti ti-credit-card me-1"></i>
+                                                    Paid
+                                                </span>
+                                                {% elif item.is_overdue == 1 %}
+                                                <span class="text-white badge bg-danger">
+                                                    <i class="ti ti-alert-triangle me-1"></i>
+                                                    Bill Overdue
+                                                </span>
+                                                <span style="font-size: x-small;" class="d-block text-danger"><i class="ti ti-alert-circle me-1"></i>Overdue ({{item.days_since_job}} days)</span>
+                                                {% else %}
+                                                <span class="text-white badge bg-warning">
+                                                    <i class="ti ti-clock me-1"></i>
+                                                    Unpaid
+                                                </span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-2">
-                                                    <a href="{{ url_for('technician.modify_job', job_id=customer.job_id) }}" class="btn btn-sm btn-outline-info">
+                                                    <a href="{{ url_for('technician.modify_job', job_id=item.job_id) }}" class="btn btn-sm btn-outline-info">
                                                         <i class="ti ti-eye"></i>
                                                     </a>
-                                                    {% if not customer.paid %}
-                                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="markAsPaid({{ customer.customer_id }})">
-                                                            <i class="ti ti-circle-check"></i>
-                                                        </button>
+                                                    {% if not item.paid %}
+                                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="handleDirectPost('{{ url_for('administrator.pay_single_bill', job_id=item.job_id) }}', 'Are you sure you want to mark this job as paid? This action cannot be undone.')" title="Mark as Paid">
+                                                            <i class="ti ti-credit-card"></i>
+                                                    </button>
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -221,13 +229,12 @@ Billing Management - Administrator Portal
                                 </table>
                             </div>
 
-                            <!-- Bulk Actions -->
                             <div class="d-flex justify-content-between align-items-center mt-3 p-3">
                                 <div class="text-muted d-flex align-items-center gap-1">
                                     <i class="ti ti-info-circle"></i>
                                     Select a bill to mark as paid
                                 </div>
-                                <button type="submit" class="btn btn-accent btn-lg" onclick="return confirm('Are you sure you want to mark the selected bill as paid?')">
+                                <button type="submit" class="btn btn-accent btn-lg" onclick="return confirm('Are you sure you want to mark this job as paid? This action cannot be undone.')">
                                     <i class="ti ti-circle-check me-2"></i>
                                     Mark as Paid
                                 </button>
@@ -254,28 +261,39 @@ Billing Management - Administrator Portal
 </div>
 
 <script>
-function markAsPaid(customerId) {
-    if (confirm('Are you sure you want to mark this bill as paid?')) {
-        // Set the radio button for this customer
-        const radioButton = document.querySelector(`input[name="bill_select"][value="${customerId}"]`);
-        if (radioButton) {
-            radioButton.checked = true;
-        }
 
-        // Submit the form
-        const form = document.querySelector('form[action="/administrator_mark_paid"]');
-        if (form) {
-            form.submit();
-        }
+document.getElementById('makeAsPaidForm').addEventListener('submit', function(e) {
+    e.preventDefault(); 
+    const selectedRadio = document.querySelector('input[name="bill_select"]:checked');
+    
+    if (!selectedRadio) {
+        alert('Please select a bill to mark as paid.');
+        return;
+    }
+    const jobId = selectedRadio.value;
+    this.method = 'POST';
+    this.action = `/administrator/jobs/${jobId}/pay`;
+    this.submit();
+});
+
+function handleDirectPost(url, confirmationMessage) {
+    if (confirm(confirmationMessage)) {
+        // Create a temporary hidden form
+        const tempForm = document.createElement('form');
+        tempForm.method = 'POST';
+        tempForm.action = url;
+
+        // Append to body and submit seamlessly
+        document.body.appendChild(tempForm);
+        tempForm.submit();
     }
 }
 
-// Auto-refresh every 30 seconds to show updated payment status
 setInterval(function() {
-    if (document.hidden) return; // Don't refresh if tab is not active
+    if (document.hidden) return; 
 
-    // Only refresh if there are unpaid bills
-    if (document.querySelectorAll('.text-white badge.bg-danger').length > 0) {
+    // FIX: Fixed spaces inside the compound selector so it finds elements correctly
+    if (document.querySelectorAll('.badge.bg-danger').length > 0) {
         location.reload();
     }
 }, 30000);

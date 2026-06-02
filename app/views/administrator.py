@@ -250,7 +250,7 @@ def overdue_bills():
                              total_count=0)
 
 
-@administrator_bp.route('/pay-bills')
+@administrator_bp.route('/pay-bills', methods=['GET'])
 @handle_database_errors
 @log_function_call
 def pay_bills():
@@ -260,30 +260,32 @@ def pay_bills():
         return redirect_response
 
     try:
-        # Get customer name filter parameter
+        # 1. Read filter parameter from query string (GET)
         customer_name = sanitize_input(request.args.get('customer', ''))
 
-        # Get unpaid bills
-        unpaid_bills = billing_service.get_unpaid_bills(customer_name if customer_name != 'Choose...' else None)
+        # 2. Safe check: turn empty strings or legacy 'Choose...' strings into None
+        filter_name = None
+        if customer_name and customer_name != 'Choose...' and customer_name.strip() != '':
+            filter_name = customer_name
 
-        # Get customer name list
+        # 3. Fetch data from services
+        unpaid_bills = billing_service.get_unpaid_bills(filter_name)
         customers = customer_service.get_all_customers()
-        customer_names = [f"{c.first_name} {c.family_name}".strip() for c in customers]
-        customer_names = list(set(customer_names))
-        customer_names.sort()
 
+        # 4. Explicitly map backend names to what the UI template expects
         return render_template('administrator/pay_bills.html',
                              unpaid_bills=unpaid_bills,
-                             customer_name=customer_name,
-                             customer_names=customer_names)
+                             customers=customers,
+                             customer_name=customer_name)
 
     except Exception as e:
         logger.error(f"Payment processing page loading failed: {e}")
         flash('Failed to load payment processing page', 'error')
+        # Robust fallback context preventing template engine layout crashes
         return render_template('administrator/pay_bills.html',
-                             unpaid_bills=[],
-                             customer_name='',
-                             customer_names=[])
+                             customer_info=[],
+                             customers=[],
+                             customer_name='')
 
 
 @administrator_bp.route('/customers/<int:customer_id>/pay', methods=['POST'])
