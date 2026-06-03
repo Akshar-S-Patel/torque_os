@@ -181,7 +181,7 @@
                                 </li>
                                 {% if overdue_bills_count|default(0) > 0 %}
                                 <li><a class="dropdown-item"
-                                        href="{% if session.current_role in ('owner', 'admin') %}{{ url_for('administrator.overdue_bills') }}{% else %}#{% endif %}">
+                                        href="{% if session.current_role in ('owner', 'admin') %}{{ url_for('administrator.bill_history') }}{% else %}#{% endif %}">
                                         <div class="d-flex">
                                             <i class="ti ti-alert-triangle text-warning me-2"></i>
                                             <div>
@@ -194,7 +194,7 @@
                                 {% endif %}
                                 {% if unpaid_bills_count|default(0) > 0 %}
                                 <li><a class="dropdown-item"
-                                        href="{% if session.current_role in ('owner', 'admin') %}{{ url_for('administrator.pay_bills') }}{% else %}#{% endif %}">
+                                        href="{% if session.current_role in ('owner', 'admin') %}{{ url_for('administrator.unpaid_bills') }}{% else %}#{% endif %}">
                                         <div class="d-flex">
                                             <i class="ti ti-credit-card text-info me-2"></i>
                                             <div>

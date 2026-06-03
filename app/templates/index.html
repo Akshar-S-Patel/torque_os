@@ -214,10 +214,10 @@ endblock %}
             </div>
             <div class="card-footer d-flex gap-2">
                 {% if session.current_role in ('owner', 'admin') %}
-                <a href="{{ url_for('administrator.pay_bills') }}" class="btn btn-outline-info">
+                <a href="{{ url_for('administrator.unpaid_bills') }}" class="btn btn-outline-info">
                     <i class="ti ti-credit-card me-1"></i>Payments
                 </a>
-                <a href="{{ url_for('administrator.overdue_bills') }}" class="btn btn-warning">
+                <a href="{{ url_for('administrator.bill_history') }}" class="btn btn-warning">
                     <i class="ti ti-alert-triangle me-1"></i>Overdue
                 </a>
                 {% else %}
@@ -370,7 +370,7 @@ endblock %}
                 <h3 class="card-title"><i class="ti ti-alert-triangle text-warning me-2"></i>Overdue Bills</h3>
                 <div class="card-actions">
                     {% if session.current_role in ('owner', 'admin') %}
-                    <a href="{{ url_for('administrator.overdue_bills') }}" class="btn btn-sm btn-outline-warning">View
+                    <a href="{{ url_for('administrator.bill_history') }}" class="btn btn-sm btn-outline-warning">View
                         All</a>
                     {% endif %}
                 </div>

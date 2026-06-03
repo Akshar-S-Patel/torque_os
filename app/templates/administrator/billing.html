@@ -81,20 +81,20 @@
                         <ul class="nav nav-pills">
                             <li class="nav-item">
                                 <a class="nav-link {% if not filter_type or filter_type == 'all' %}active{% endif %}"
-                                   href="{{ url_for('administrator.pay_bills') }}">
+                                   href="{{ url_for('administrator.unpaid_bills') }}">
                                     All
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if filter_type == 'unpaid' %}active{% endif %}"
-                                   href="{{ url_for('administrator.pay_bills', filter='unpaid') }}">
+                                   href="{{ url_for('administrator.unpaid_bills', filter='unpaid') }}">
                                     <i class="ti ti-clock me-1"></i>
                                     Unpaid
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if filter_type == 'overdue' %}active{% endif %}"
-                                   href="{{ url_for('administrator.overdue_bills') }}">
+                                   href="{{ url_for('administrator.bill_history') }}">
                                     <i class="ti ti-alert-triangle me-1"></i>
                                     Overdue
                                 </a>
@@ -180,7 +180,7 @@
                                     </td>
                                     <td>
                                         {% if bill.paid != 1 %}
-                                        <form method="post" action="{{ url_for('administrator.pay_bills') }}" class="d-inline">
+                                        <form method="post" action="{{ url_for('administrator.unpaid_bills') }}" class="d-inline">
                                             <input type="hidden" name="job_id" value="{{ bill.job_id }}">
                                             <button type="submit" class="btn btn-sm btn-success">
                                                 <i class="ti ti-credit-card me-1"></i>

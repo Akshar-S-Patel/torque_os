@@ -22,15 +22,15 @@
             <i class="ti ti-users sidebar-icon"></i>
             <span class="sidebar-label">Customers</span>
         </a>
-        <a href="{{ url_for('administrator.pay_bills') }}"
-           class="sidebar-link {% if request.endpoint and 'pay_bills' in request.endpoint %}active{% endif %}">
+        <a href="{{ url_for('administrator.bill_history') }}"
+        class="sidebar-link {% if request.endpoint and 'bill_history' in request.endpoint %}active{% endif %}">
             <i class="ti ti-credit-card sidebar-icon"></i>
-            <span class="sidebar-label">Billing</span>
+            <span class="sidebar-label">Bill History</span>
         </a>
-        <a href="{{ url_for('administrator.overdue_bills') }}"
-           class="sidebar-link {% if request.endpoint and 'overdue' in request.endpoint %}active{% endif %}">
+        <a href="{{ url_for('administrator.unpaid_bills') }}"
+        class="sidebar-link {% if request.endpoint and 'unpaid_bills' in request.endpoint %}active{% endif %}">
             <i class="ti ti-alert-triangle sidebar-icon"></i>
-            <span class="sidebar-label">Overdue Bills</span>
+            <span class="sidebar-label">Unpaid/Overdue Bills</span>
         </a>
         <a href="{{ url_for('administrator.reports') }}"
            class="sidebar-link {% if request.endpoint and 'reports' in request.endpoint %}active{% endif %}">

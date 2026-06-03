@@ -1,0 +1,568 @@
+{% block title %} Invoice - Administrator Portal{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice_number }} — {{ job.tenant.name if job.tenant else 'TorqueOS' }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink: #0f1117;
+            --ink-muted: #6b7280;
+            --ink-faint: #d1d5db;
+            --accent: #1d4ed8;
+            --accent-lt: #eff6ff;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --page: #ffffff;
+            --surface: #f8fafc;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #e5e7eb;
+            color: var(--ink);
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── Screen wrapper ── */
+        .page-wrapper {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .print-bar {
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .print-bar h2 {
+            font-size: 13px;
+            color: var(--ink-muted);
+            font-weight: 500;
+        }
+
+        .btn-print {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: background 0.15s;
+        }
+
+        .btn-print:hover { background: #1e40af; }
+
+        .btn-back {
+            background: white;
+            color: var(--ink);
+            border: 1px solid var(--ink-faint);
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* ── Invoice card ── */
+        .invoice {
+            width: 100%;
+            max-width: 860px;
+            background: var(--page);
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        .invoice-header {
+            background: var(--ink);
+            color: white;
+            padding: 2.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .org-name {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .org-tagline {
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .org-contact {
+            margin-top: 1rem;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.8;
+        }
+
+        .invoice-meta {
+            text-align: right;
+        }
+
+        .invoice-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 0.25rem;
+        }
+
+        .invoice-number {
+            font-family: 'DM Mono', monospace;
+            font-size: 26px;
+            font-weight: 500;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .invoice-dates {
+            margin-top: 1rem;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.8;
+        }
+
+        .invoice-dates span {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* ── Status bar ── */
+        .status-bar {
+            padding: 0.75rem 3rem;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-bar.paid { background: #dcfce7; color: var(--success); }
+        .status-bar.unpaid { background: #fef3c7; color: var(--warning); }
+        .status-bar.overdue { background: #fee2e2; color: var(--danger); }
+
+        /* ── Body ── */
+        .invoice-body { padding: 2.5rem 3rem; }
+
+        /* ── Bill to / job info ── */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--ink-faint);
+        }
+
+        .meta-block label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--ink-muted);
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .meta-block p {
+            font-size: 14px;
+            color: var(--ink);
+            line-height: 1.7;
+        }
+
+        .meta-block .name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        /* ── Line items ── */
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--ink-muted);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        thead tr {
+            background: var(--surface);
+            border-top: 1px solid var(--ink-faint);
+            border-bottom: 1px solid var(--ink-faint);
+        }
+
+        th {
+            padding: 0.6rem 1rem;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ink-muted);
+            font-weight: 600;
+            text-align: left;
+        }
+
+        th.right, td.right { text-align: right; }
+
+        tbody tr { border-bottom: 1px solid var(--ink-faint); }
+        tbody tr:last-child { border-bottom: none; }
+
+        td {
+            padding: 0.85rem 1rem;
+            font-size: 13.5px;
+            vertical-align: middle;
+        }
+
+        td .item-name { font-weight: 600; color: var(--ink); }
+        td .item-category { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
+
+        .qty-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--accent-lt);
+            color: var(--accent);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* ── Totals ── */
+        .totals-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            border-top: 2px solid var(--ink-faint);
+            padding-top: 1.5rem;
+        }
+
+        .totals {
+            width: 280px;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            font-size: 13.5px;
+            color: var(--ink-muted);
+        }
+
+        .totals-row.grand {
+            border-top: 2px solid var(--ink);
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .totals-row span:last-child { font-weight: 600; color: var(--ink); }
+        .totals-row.grand span:last-child { color: var(--accent); }
+
+        /* ── Empty state ── */
+        .empty-items {
+            text-align: center;
+            padding: 2rem;
+            color: var(--ink-muted);
+            font-size: 13px;
+            background: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Footer ── */
+        .invoice-footer {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--ink-faint);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .footer-block label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--ink-muted);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .footer-block p {
+            font-size: 12.5px;
+            color: var(--ink-muted);
+            line-height: 1.7;
+        }
+
+        .thank-you {
+            text-align: center;
+            padding: 2rem 3rem;
+            background: var(--accent-lt);
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── PRINT ── */
+        @media print {
+            body { background: white; }
+
+            .page-wrapper { padding: 0; background: white; }
+            .print-bar { display: none !important; }
+
+            .invoice {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            @page {
+                margin: 1.5cm;
+                size: A4;
+            }
+
+            thead { display: table-header-group; }
+            tbody tr { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <!-- Screen-only top bar -->
+    <div class="print-bar">
+        <h2>Invoice Preview</h2>
+        <div style="display:flex;gap:0.5rem;">
+            <a href="{{ url_for('technician.modify_job', job_id=job.job_id) }}" class="btn-back">
+                ← Back to Job
+            </a>
+            <button class="btn-print" onclick="window.print()">
+                🖨 Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Invoice -->
+    <div class="invoice">
+
+        <!-- Header -->
+        <div class="invoice-header">
+            <div>
+                <div class="org-name">
+                    {{ job.tenant.name if job.tenant else 'TorqueOS' }}
+                </div>
+                <div class="org-tagline">Automotive Repair & Service</div>
+                {% if job.tenant %}
+                <div class="org-contact">
+                    {% if job.tenant.phone %}📞 {{ job.tenant.phone }}<br>{% endif %}
+                    {% if job.tenant.email %}✉ {{ job.tenant.email }}<br>{% endif %}
+                    {% if job.tenant.address %}📍 {{ job.tenant.address }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="invoice-meta">
+                <div class="invoice-label">Invoice</div>
+                <div class="invoice-number">{{ invoice_number }}</div>
+                <div class="invoice-dates">
+                    Issue Date <span>{{ job.job_date.strftime('%b %d, %Y') }}</span><br>
+                    Due Date <span>{{ due_date.strftime('%b %d, %Y') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        {% if job.paid %}
+        <div class="status-bar paid">✓ Payment Received</div>
+        {% elif job.is_overdue %}
+        <div class="status-bar overdue">⚠ Payment Overdue</div>
+        {% else %}
+        <div class="status-bar unpaid">⏳ Payment Pending</div>
+        {% endif %}
+
+        <!-- Body -->
+        <div class="invoice-body">
+
+            <!-- Meta grid -->
+            <div class="meta-grid">
+                <div class="meta-block">
+                    <label>Bill To</label>
+                    <p class="name">{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</p>
+                    {% if job.customer_rel.email %}<p>{{ job.customer_rel.email }}</p>{% endif %}
+                    {% if job.customer_rel.phone %}<p>{{ job.customer_rel.phone }}</p>{% endif %}
+                </div>
+                <div class="meta-block">
+                    <label>Job Details</label>
+                    <p>Job #{{ job.job_id }}</p>
+                    <p>Date: {{ job.job_date.strftime('%b %d, %Y') }}</p>
+                    <p>Status:
+                        {% if job.completed %}Completed{% else %}In Progress{% endif %}
+                    </p>
+                </div>
+                <div class="meta-block">
+                    <label>Payment</label>
+                    <p>Due: {{ due_date.strftime('%b %d, %Y') }}</p>
+                    <p>Method: On Account</p>
+                    <p>Status:
+                        {% if job.paid %}<strong style="color:var(--success)">Paid</strong>
+                        {% else %}<strong style="color:var(--warning)">Unpaid</strong>{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div class="section-title">Services</div>
+            {% if job.job_services %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th class="right">Unit Price</th>
+                        <th class="right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for js in job.job_services %}
+                    <tr>
+                        <td>
+                            <div class="item-name">{{ js.service.service_name }}</div>
+                            {% if js.service.category %}
+                            <div class="item-category">{{ js.service.category }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="qty-badge">{{ js.qty }}</span></td>
+                        <td class="right">${{ "%.2f"|format(js.service.cost|float) }}</td>
+                        <td class="right">${{ "%.2f"|format(js.total_cost|float) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-items">No services on this job</div>
+            {% endif %}
+
+            <!-- Parts -->
+            <div class="section-title">Parts & Materials</div>
+            {% if job.job_parts %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Part</th>
+                        <th>Qty</th>
+                        <th class="right">Unit Price</th>
+                        <th class="right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for jp in job.job_parts %}
+                    <tr>
+                        <td>
+                            <div class="item-name">{{ jp.part.part_name }}</div>
+                            {% if jp.part.sku %}
+                            <div class="item-category">SKU: {{ jp.part.sku }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="qty-badge">{{ jp.qty }}</span></td>
+                        <td class="right">${{ "%.2f"|format(jp.part.cost|float) }}</td>
+                        <td class="right">${{ "%.2f"|format(jp.total_cost|float) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-items">No parts on this job</div>
+            {% endif %}
+
+            <!-- Totals -->
+            <div class="totals-wrapper">
+                <div class="totals">
+                    <div class="totals-row">
+                        <span>Services Subtotal</span>
+                        <span>${{ "%.2f"|format(services_total) }}</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>Parts Subtotal</span>
+                        <span>${{ "%.2f"|format(parts_total) }}</span>
+                    </div>
+                    <div class="totals-row grand">
+                        <span>Total Due</span>
+                        <span>${{ "%.2f"|format(job.total_cost|float) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="invoice-footer">
+                <div class="footer-block">
+                    <label>Payment Terms</label>
+                    <p>Payment is due within 30 days of the invoice date. Late payments may be subject to additional charges.</p>
+                </div>
+                <div class="footer-block">
+                    <label>Notes</label>
+                    <p>Thank you for choosing {{ job.tenant.name if job.tenant else 'our shop' }} for your automotive service needs. We appreciate your business.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thank you strip -->
+        <div class="thank-you">
+            Thank you for your business — {{ job.tenant.name if job.tenant else 'TorqueOS' }}
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
+
+{% endblock %}

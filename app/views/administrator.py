@@ -93,6 +93,43 @@ def revenue_by_year():
     return jsonify({'monthly_revenue': monthly_revenue})
 
 
+@administrator_bp.route('/jobs/<int:job_id>/invoice')
+@handle_database_errors
+def job_invoice(job_id):
+    """Invoice page for a job"""
+    redirect_response = require_admin_login()
+    if redirect_response:
+        return redirect_response
+
+    try:
+        job = job_service.get_job_by_id(job_id)
+
+        if not job:
+            flash('Job not found', 'error')
+            return redirect(url_for('technician.current_jobs'))
+
+        services_total = sum(float(js.total_cost) for js in job.job_services)
+        parts_total = sum(float(jp.total_cost) for jp in job.job_parts)
+        due_date = job.job_date + timedelta(days=30)
+
+        return render_template('administrator/invoice.html',
+                            job=job,
+                            services_total=services_total,
+                            parts_total=parts_total,
+                            due_date=due_date,
+                            invoice_number=f'INV-{job.job_id:05d}')
+        
+    except Exception as e:
+        logger.error(f"Invoice generation failed: {e}")
+        flash('Failed to generate invoice', 'error')
+        return render_template('administrator/invoice.html',
+                            job={},
+                            services_total=0,
+                            parts_total=0,
+                            due_date=None,
+                            invoice_number=f'INV-00000')
+
+
 @administrator_bp.route('/customers')
 @validate_pagination
 @handle_database_errors
@@ -213,10 +250,10 @@ def billing_management():
                              billing_stats={})
 
 
-@administrator_bp.route('/overdue-bills', methods=['GET', 'POST'])
+@administrator_bp.route('/bill-history', methods=['GET', 'POST'])
 @handle_database_errors
 @log_function_call
-def overdue_bills():
+def bill_history():
     """Billing History & Overdue bills page"""
     redirect_response = require_admin_login()
     if redirect_response:
@@ -227,13 +264,12 @@ def overdue_bills():
         chosen_customer_val = None
 
         if request.method == 'POST':
-            chosen_customer_val = request.form.get('customer_choose_overduebill', '')
+            chosen_customer_val = request.form.get('customer_choose', '')
         else:
-            chosen_customer_val = request.args.get('customer_choose_overduebill', '')
+            chosen_customer_val = request.args.get('customer_choose', '')
 
         customers = customer_service.get_all_customers()
         
-        # If a filter selection exists, isolate the customer ID (first word of the composite value string)
         if chosen_customer_val and chosen_customer_val.strip() != '':
             try:
                 target_id = int(chosen_customer_val.split()[0])
@@ -243,58 +279,69 @@ def overdue_bills():
                 pass
 
         all_billing_entries = billing_service.get_all_bills_with_status()
+        
+        unpaid_bills = 0
+        for bill in all_billing_entries:
+            if not bill['paid']:
+                unpaid_bills += 1
 
-        return render_template('administrator/overdue_bills.html',
+        return render_template('administrator/bill_history.html',
                              jobs=all_billing_entries,
                              customers=customers,
                              selected_customer=selected_customer,
-                             chosen_customer_val=chosen_customer_val)
+                             chosen_customer_val=chosen_customer_val,
+                             unpaid_bills=unpaid_bills)
 
     except Exception as e:
         logger.error(f"Billing history page loading failed: {e}")
         flash('Failed to load billing details', 'error')
         # Empty array fallbacks to prevent Jinja engine structural layout breaks
-        return render_template('administrator/overdue_bills.html',
+        return render_template('administrator/bill_history.html',
                              jobs=[],
                              customers=[],
                              selected_customer=None,
-                             chosen_customer_val='')
+                             chosen_customer_val='',
+                             unpaid_bills=0)
 
-@administrator_bp.route('/pay-bills', methods=['GET'])
+
+@administrator_bp.route('/unpaid-bills', methods=['GET'])
 @handle_database_errors
 @log_function_call
-def pay_bills():
+def unpaid_bills():
     """Payment processing page"""
     redirect_response = require_admin_login()
     if redirect_response:
         return redirect_response
 
     try:
-        # 1. Read filter parameter from query string (GET)
         customer_name = sanitize_input(request.args.get('customer', ''))
 
-        # 2. Safe check: turn empty strings or legacy 'Choose...' strings into None
         filter_name = None
         if customer_name and customer_name != 'Choose...' and customer_name.strip() != '':
             filter_name = customer_name
 
-        # 3. Fetch data from services
         unpaid_bills = billing_service.get_unpaid_bills(filter_name)
         customers = customer_service.get_all_customers()
+       
+        total_overdue = 0
+        for bill in unpaid_bills:
+            if not bill.is_overdue:
+                total_overdue += 1
 
-        # 4. Explicitly map backend names to what the UI template expects
-        return render_template('administrator/pay_bills.html',
+        # Target file renamed to unpaid_bills.html
+        return render_template('administrator/unpaid_bills.html',
                              unpaid_bills=unpaid_bills,
                              customers=customers,
+                             total_overdue=total_overdue,
                              customer_name=customer_name)
 
     except Exception as e:
         logger.error(f"Payment processing page loading failed: {e}")
         flash('Failed to load payment processing page', 'error')
-        # Robust fallback context preventing template engine layout crashes
-        return render_template('administrator/pay_bills.html',
+        return render_template('administrator/unpaid_bills.html',
                              customer_info=[],
                              customers=[],
+                             total_overdue=0,
                              customer_name='')
 
 
@@ -343,14 +390,14 @@ def pay_single_bill(job_id):
         # Redirect based on source page
         return_page = sanitize_input(request.form.get('return_page', 'pay_bills'))
         if return_page == 'overdue_bills':
-            return redirect(url_for('administrator.overdue_bills'))
+            return redirect(url_for('administrator.bill_history'))
         else:
-            return redirect(url_for('administrator.pay_bills'))
+            return redirect(url_for('administrator.unpaid_bills'))
 
     except Exception as e:
         logger.error(f"Failed to mark bill as paid: {e}")
         flash('Failed to mark payment, please try again later', 'error')
-        return redirect(url_for('administrator.pay_bills'))
+        return redirect(url_for('administrator.unpaid_bills'))
 
 
 @administrator_bp.route('/reports')
