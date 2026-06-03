@@ -12,7 +12,7 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --ink: #0f1117;
+            --ink: #1d283b;
             --ink-muted: #6b7280;
             --ink-faint: #d1d5db;
             --accent: #1d4ed8;
@@ -405,9 +405,24 @@
                 <div class="org-tagline">Automotive Repair & Service</div>
                 {% if job.tenant %}
                 <div class="org-contact">
-                    {% if job.tenant.phone %}📞 {{ job.tenant.phone }}<br>{% endif %}
-                    {% if job.tenant.email %}✉ {{ job.tenant.email }}<br>{% endif %}
-                    {% if job.tenant.address %}📍 {{ job.tenant.address }}{% endif %}
+                {% if job.tenant.phone %}
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.7;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg>
+                        <span>{{ job.tenant.phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if job.tenant.email %}
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.7;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10"/><path d="M3 7l9 6l9 -6"/></svg>
+                        <span>{{ job.tenant.email }}</span>
+                    </div>
+                    {% endif %}
+                    {% if job.tenant.address %}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.7;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0"/></svg>
+                        <span>{{ job.tenant.address }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -420,15 +435,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Status bar -->
-        {% if job.paid %}
-        <div class="status-bar paid">✓ Payment Received</div>
-        {% elif job.is_overdue %}
-        <div class="status-bar overdue">⚠ Payment Overdue</div>
-        {% else %}
-        <div class="status-bar unpaid">⏳ Payment Pending</div>
-        {% endif %}
 
         <!-- Body -->
         <div class="invoice-body">
@@ -445,13 +451,12 @@
                     <label>Job Details</label>
                     <p>Job #{{ job.job_id }}</p>
                     <p>Date: {{ job.job_date.strftime('%b %d, %Y') }}</p>
-                    <p>Status:
-                        {% if job.completed %}Completed{% else %}In Progress{% endif %}
-                    </p>
+                    {% if job.assignee %}
+                    <p>Assignee: {{ job.assignee.username }}</p>
+                    {% endif %}
                 </div>
                 <div class="meta-block">
                     <label>Payment</label>
-                    <p>Due: {{ due_date.strftime('%b %d, %Y') }}</p>
                     <p>Method: On Account</p>
                     <p>Status:
                         {% if job.paid %}<strong style="color:var(--success)">Paid</strong>
