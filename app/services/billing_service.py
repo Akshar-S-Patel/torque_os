@@ -212,7 +212,10 @@ class BillingService:
 
             overdue_bills = self.get_overdue_bills()
             overdue_amount = sum(float(job.total_cost or 0) for job in overdue_bills)
-
+            
+            unpaid_bills = result.unpaid_bills - len(overdue_bills)
+            unpaid_amount = float(result.unpaid_amount) - overdue_amount
+            
             total_amount = float(result.total_amount)
             paid_amount = float(result.paid_amount)
 
@@ -221,11 +224,11 @@ class BillingService:
                 'total_amount': total_amount,
                 'paid_bills': result.paid_bills,
                 'paid_amount': paid_amount,
-                'unpaid_bills': result.unpaid_bills,
-                'unpaid_amount': float(result.unpaid_amount),
+                'unpaid_bills': unpaid_bills,
+                'unpaid_amount': unpaid_amount,
                 'overdue_bills': len(overdue_bills),
                 'overdue_amount': overdue_amount,
-                'total_revenue': paid_amount,
+                'total_revenue': total_amount,
                 'monthly_revenue': monthly_revenue,
                 'payment_rate': (paid_amount / total_amount * 100) if total_amount > 0 else 0
             }

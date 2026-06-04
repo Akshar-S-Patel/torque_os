@@ -8,7 +8,6 @@
 
 {% block admin_content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between">
@@ -29,59 +28,56 @@
         </div>
     </div>
 
-    <!-- Period Info -->
-    {% if report_data and report_data.period_info %}
+    {% if period_info %}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center gap-2">
+            <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
                 <i class="ti ti-info-circle"></i>
                 <div>
-                    <strong>Report Period:</strong>
-                    {{ report_data.period_info.start_date|default('N/A') }} to {{ report_data.period_info.end_date|default('N/A') }}
-                    {% if report_data.period_info.comparison %}
-                    &mdash; Compared with {{ report_data.period_info.comparison }}
+                    <strong>Current Period:</strong> {{ period_info.current_month|default('N/A') }}
+                    {% if period_info.last_month %}
+                    &mdash; <strong>Previous Period:</strong> {{ period_info.last_month }}
                     {% endif %}
+                    &mdash; <small class="text-muted">Generated on: {{ period_info.generated_date|default('N/A') }}</small>
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- Job Statistics -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+            <div class="card mb-0">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-briefcase"></i>
                         Job Statistics
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    {% set js = report_data.job_stats if report_data else {} %}
                     <div class="row g-4">
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">{{ js.total|default(0) }}</div>
+                                <div class="h2 mb-0 text-primary">{{ job_stats.total_jobs|default(0) }}</div>
                                 <small class="text-muted">Total Jobs</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">{{ js.completed|default(0) }}</div>
+                                <div class="h2 mb-0 text-success">{{ job_stats.completed_jobs|default(0) }}</div>
                                 <small class="text-muted">Completed</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">{{ js.in_progress|default(0) }}</div>
+                                <div class="h2 mb-0 text-warning">{{ job_stats.pending_jobs|default(0) }}</div>
                                 <small class="text-muted">In Progress</small>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(107,114,128,0.1);">
-                                <div class="h2 mb-0 text-secondary">{{ js.pending|default(0) }}</div>
-                                <small class="text-muted">Pending</small>
+                            <div class="text-center p-3 rounded" style="background: rgba(13,110,253,0.1);">
+                                <div class="h2 mb-0 text-info">{{ job_stats.completion_rate|default('0%') }}%</div>
+                                <small class="text-muted">Completion Rate</small>
                             </div>
                         </div>
                     </div>
@@ -90,40 +86,38 @@
         </div>
     </div>
 
-    <!-- Billing Statistics -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header" style="background: var(--info); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+            <div class="card mb-0">
+                <div class="card-header" style="background: var(--info); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-currency-dollar"></i>
-                        Billing Statistics
+                        Payment Statistics
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    {% set bs = report_data.billing_stats if report_data else {} %}
                     <div class="row g-4">
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">${{ "%.2f"|format(bs.total_revenue|default(0)|float) }}</div>
+                                <div class="h2 mb-0 text-primary">${{ "%.2f"|format(billing_stats.total_revenue|default(0)|float) }}</div>
                                 <small class="text-muted">Total Revenue</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">${{ "%.2f"|format(bs.total_paid|default(0)|float) }}</div>
+                                <div class="h2 mb-0 text-success">${{ "%.2f"|format(billing_stats.paid_amount|default(0)|float) }}</div>
                                 <small class="text-muted">Collected</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">${{ "%.2f"|format(bs.total_unpaid|default(0)|float) }}</div>
+                                <div class="h2 mb-0 text-warning">${{ "%.2f"|format(billing_stats.unpaid_amount|default(0)|float) }}</div>
                                 <small class="text-muted">Outstanding</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(220,38,38,0.1);">
-                                <div class="h2 mb-0 text-danger">${{ "%.2f"|format(bs.total_overdue|default(0)|float) }}</div>
+                                <div class="h2 mb-0 text-danger">${{ "%.2f"|format(billing_stats.overdue_amount|default(0)|float) }}</div>
                                 <small class="text-muted">Overdue</small>
                             </div>
                         </div>
@@ -133,35 +127,39 @@
         </div>
     </div>
 
-    <!-- Customer Statistics -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header" style="background: var(--success); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
-                        <i class="ti ti-users"></i>
-                        Customer Statistics
+            <div class="card mb-0">
+                <div class="card-header" style="background: var(--success); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+                        <i class="ti ti-file-text"></i>
+                        Billing Status
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    {% set cs = report_data.customer_stats if report_data else {} %}
                     <div class="row g-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">{{ cs.total|default(0) }}</div>
-                                <small class="text-muted">Total Customers</small>
+                                <div class="h2 mb-0 text-primary">{{ billing_stats.total_bills|default(0) }}</div>
+                                <small class="text-muted">Total Bills</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">{{ cs.active|default(0) }}</div>
-                                <small class="text-muted">Active Customers</small>
+                                <div class="h2 mb-0 text-success">{{ billing_stats.paid_bills|default('0%') }}</div>
+                                <small class="text-muted">With Paid Bills</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">{{ cs.with_unpaid|default(0) }}</div>
+                                <div class="h2 mb-0 text-warning">{{ customer_stats.customers_with_unpaid|default(0) }}</div>
                                 <small class="text-muted">With Unpaid Bills</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 rounded" style="background: rgba(220,38,38,0.1);">
+                                <div class="h2 mb-0 text-danger">{{ customer_stats.customers_with_overdue|default(0) }}</div>
+                                <small class="text-muted">With Overdue Bills</small>
                             </div>
                         </div>
                     </div>

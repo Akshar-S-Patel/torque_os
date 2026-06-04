@@ -425,29 +425,37 @@ def reports():
         return redirect_response
 
     try:
-        # Get various statistics
         job_stats = job_service.get_job_statistics()
         billing_stats = billing_service.get_billing_statistics()
 
-        # Get customer statistics
-        total_customers = len(customer_service.get_all_customers())
+        total_customers = customer_service.get_all_customers()
         customers_with_unpaid = customer_service.get_customers_with_filter(has_unpaid=True)
         customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
 
-        # Calculate current month vs last month comparison data
+        total_customers_count = len(total_customers)
+
         today = date.today()
         current_month_start = today.replace(day=1)
         last_month_end = current_month_start - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
 
+        total_customers_with_overdue = len(customers_with_overdue)
+        total_customers_with_unpaid = len(customers_with_unpaid)
+        total_customers_with_paid = total_customers_count - total_customers_with_unpaid
+        
+        actual_total_customers_with_unpaid = total_customers_with_unpaid - total_customers_with_overdue
+        
+        print(f"Reports Debug: total_customers_count {total_customers_count} total_customers_with_unpaid {total_customers_with_unpaid} ")
+        
         report_data = {
             'job_stats': job_stats,
             'billing_stats': billing_stats,
             'customer_stats': {
-                'total_customers': total_customers,
-                'customers_with_unpaid': len(customers_with_unpaid),
-                'customers_with_overdue': len(customers_with_overdue),
-                'customer_payment_rate': ((total_customers - len(customers_with_unpaid)) / total_customers * 100) if total_customers > 0 else 0
+                'total_customers': total_customers_count,
+                'customers_with_unpaid': actual_total_customers_with_unpaid,
+                'customers_with_overdue': total_customers_with_overdue,
+                # FIX: Use the integer count here instead of the raw list
+                'customer_payment_rate': f"{(total_customers_with_paid / total_customers_count * 100):.1f}%" if total_customers_count > 0 else "0%"
             },
             'period_info': {
                 'current_month': current_month_start.strftime('%B %Y'),
@@ -456,8 +464,8 @@ def reports():
             }
         }
 
-        return render_template('administrator/reports.html',
-                             report_data=report_data)
+        # FIX: Use ** unpacking so keys are passed directly to match the streamlined template
+        return render_template('administrator/reports.html', **report_data)
 
     except Exception as e:
         logger.error(f"Reports page loading failed: {e}")
