@@ -42,47 +42,46 @@ def require_admin_login():
 @handle_database_errors
 @log_function_call
 def dashboard():
-    """Administrator dashboard"""
     redirect_response = require_admin_login()
     if redirect_response:
         return redirect_response
 
     try:
-        # Get system statistics
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+
         job_stats = job_service.get_job_statistics()
         billing_stats = billing_service.get_billing_statistics()
-
-        # Get customer statistics
         total_customers = len(customer_service.get_all_customers())
         customers_with_unpaid = customer_service.get_customers_with_filter(has_unpaid=True)
         customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
 
-        # Get recent activities
-        recent_jobs = job_service.get_unpaid_and_pending_jobs()
+        recent_jobs, total_jobs, total_pages = job_service.get_unpaid_and_pending_jobs(page=page, per_page=per_page)
         overdue_bills = billing_service.get_overdue_bills()[:5]
 
         return render_template('administrator/dashboard.html',
-                             job_stats=job_stats,
-                             billing_stats=billing_stats,
-                             total_customers=total_customers,
-                             customers_with_unpaid=len(customers_with_unpaid),
-                             customers_with_overdue=len(customers_with_overdue),
-                             recent_jobs=recent_jobs,
-                             overdue_bills=overdue_bills,
-                             current_date=date.today())
+                               job_stats=job_stats,
+                               billing_stats=billing_stats,
+                               total_customers=total_customers,
+                               customers_with_unpaid=len(customers_with_unpaid),
+                               customers_with_overdue=len(customers_with_overdue),
+                               recent_jobs=recent_jobs,
+                               overdue_bills=overdue_bills,
+                               current_date=date.today(),
+                               page=page,
+                               per_page=per_page,
+                               total_jobs=total_jobs,
+                               total_pages=total_pages)
 
     except Exception as e:
         logger.error(f"Administrator dashboard loading failed: {e}")
         flash('Failed to load dashboard', 'error')
         return render_template('administrator/dashboard.html',
-                             job_stats={},
-                             billing_stats={},
-                             total_customers=0,
-                             customers_with_unpaid=0,
-                             customers_with_overdue=0,
-                             recent_jobs=[],
-                             overdue_bills=[],
-                             current_date=date.today())
+                               job_stats={}, billing_stats={},
+                               total_customers=0, customers_with_unpaid=0,
+                               customers_with_overdue=0, recent_jobs=[],
+                               overdue_bills=[], current_date=date.today(),
+                               page=1, per_page=5, total_jobs=0, total_pages=0)
 
 
 @administrator_bp.route('/dashboard/revenue')
@@ -141,6 +140,7 @@ def customer_list(page=1, per_page=20):
         return redirect_response
 
     try:
+        import traceback
         # Get filter parameters
         filter_type = sanitize_input(request.args.get('filter', 'all'))
         search_query = sanitize_input(request.args.get('search', ''))
@@ -173,7 +173,11 @@ def customer_list(page=1, per_page=20):
         customers_page = customers[start:end]
         total_pages = (total + per_page - 1) // per_page
         
-        recent_jobs = job_service.get_unpaid_and_pending_jobs()
+        job_page = request.args.get('job_page', 1, type=int)
+        job_per_page = 10
+        print("DEBUG job_page:", job_page)
+        recent_jobs, total_jobs, total_job_pages = job_service.get_unpaid_and_pending_jobs(job_page, job_per_page)
+        print("DEBUG recent_jobs:", len(recent_jobs), "total:", total_jobs, "pages:", total_job_pages)
 
         return render_template('administrator/customer_list.html',
                              customers=customers_page,
@@ -181,6 +185,9 @@ def customer_list(page=1, per_page=20):
                              per_page=per_page,
                              total=total,
                              total_pages=total_pages,
+                             total_jobs=total_jobs,
+                             total_job_pages=total_job_pages,
+                             job_page=job_page, 
                              filter_type=filter_type,
                              search_query=search_query,
                              jobs=recent_jobs,
@@ -190,15 +197,23 @@ def customer_list(page=1, per_page=20):
 
     except Exception as e:
         logger.error(f"Customer management page loading failed: {e}")
+        traceback.print_exc()
         flash('Failed to load customer list', 'error')
         return render_template('administrator/customer_list.html',
-                             customers=[],
-                             page=1,
-                             per_page=per_page,
-                             total=0,
-                             total_pages=0,
-                             filter_type='all',
-                             search_query='')
+                           customers=[],
+                           page=1,
+                           per_page=per_page,
+                           total=0,
+                           total_pages=0,
+                           filter_type='all',
+                           search_query='',
+                           jobs=[],
+                           total_jobs=0,
+                           total_job_pages=0,
+                           job_page=1,
+                           services=[],
+                           parts=[],
+                           today=date.today().isoformat())
 
 
 @administrator_bp.route('/billing')

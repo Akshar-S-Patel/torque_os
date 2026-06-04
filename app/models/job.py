@@ -76,50 +76,43 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
     tenant: Mapped[Optional["Tenant"]] = relationship("Tenant", backref="jobs")
 
     @classmethod
-    def get_current_jobs(cls, page: int = 1, per_page: int = 10) -> Tuple[List['Job'], int]:
-        """Get current incomplete jobs with pagination, scoped to tenant"""
+    def _paginated_jobs(cls, filters: list, page: int, per_page: int) -> Tuple[List['Job'], int]:
+        """Private helper: apply filters, paginate, return (jobs, total)"""
         from app.models.customer import Customer
 
-        base_filter = [cls.completed == False]
-        tenant_id = cls._get_current_tenant_id()
-        if tenant_id:
-            base_filter.append(cls.tenant_id == tenant_id)
-
         total = db.session.execute(
-            db.select(db.func.count()).select_from(cls).where(and_(*base_filter))
+            db.select(db.func.count()).select_from(cls).where(and_(*filters))
         ).scalar() or 0
 
         offset = (page - 1) * per_page
         query = (
             db.select(cls)
-            .where(and_(*base_filter))
+            .where(and_(*filters))
             .join(Customer, cls.customer == Customer.customer_id)
             .order_by(Customer.first_name, Customer.family_name, cls.job_date.desc())
             .offset(offset)
             .limit(per_page)
         )
-
         jobs = list(db.session.execute(query).scalars())
         return jobs, total
 
     @classmethod
-    def get_unpaid_and_pending_jobs(cls) -> List['Job']:
-        """Get unpaid and pending jobs, scoped to tenant"""
-        from app.models.customer import Customer
+    def get_current_jobs(cls, page: int = 1, per_page: int = 10) -> Tuple[List['Job'], int]:
+        """Get current incomplete jobs with pagination, scoped to tenant"""
+        filters = [cls.completed == False]
+        tenant_id = cls._get_current_tenant_id()
+        if tenant_id:
+            filters.append(cls.tenant_id == tenant_id)
+        return cls._paginated_jobs(filters, page, per_page)
 
+    @classmethod
+    def get_unpaid_and_pending_jobs(cls, page: int = 1, per_page: int = 10) -> Tuple[List['Job'], int]:
+        """Get unpaid and pending jobs with pagination, scoped to tenant"""
         filters = [db.or_(cls.paid == False, cls.completed == False)]
         tenant_id = cls._get_current_tenant_id()
         if tenant_id:
             filters.append(cls.tenant_id == tenant_id)
-
-        query = (
-            db.select(cls)
-            .where(and_(*filters))
-            .join(Customer, cls.customer == Customer.customer_id)
-            .order_by(Customer.first_name, Customer.family_name, cls.job_date.desc())
-        )
-
-        return list(db.session.execute(query).scalars())
+        return cls._paginated_jobs(filters, page, per_page)
     
     @classmethod
     def get_all_with_customer_info(cls) -> List['Job']:

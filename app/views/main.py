@@ -96,42 +96,9 @@ def dashboard():
     
     try:
         user_type = session.get('current_role', 'technician')
-
-        # Get statistics
-        job_stats = job_service.get_job_statistics()
-            
-        # Show template based on role
-        if user_type in ('owner', 'admin'):
-            billing_stats = billing_service.get_billing_statistics()
-            overdue_bills = billing_service.get_overdue_bills()
-            recent_jobs = job_service.get_unpaid_and_pending_jobs()
-            total_customers = len(customer_service.get_all_customers())
-            customers_with_unpaid = customer_service.get_customers_with_filter(has_unpaid=True)
-            customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
-            return render_template('administrator/dashboard.html',
-                             job_stats=job_stats,
-                             billing_stats=billing_stats,
-                             total_customers=total_customers,
-                             customers_with_unpaid=len(customers_with_unpaid),
-                             customers_with_overdue=len(customers_with_overdue),
-                             recent_jobs=recent_jobs,
-                             overdue_bills=overdue_bills,
-                             current_date=date.today())
         
-        today = date.today()
-        recent_jobs, _, _ = job_service.get_current_jobs(page=1, per_page=10)
-        #TODO: filter today's schedule for currently assigned technician
-        today_jobs = [job for job in recent_jobs
-                     if job.job_date == today or
-                        (isinstance(job.job_date, str) and
-                         job.job_date.startswith(str(today)))]
-
-        return render_template('technician/dashboard.html',
-                             job_stats=job_stats,
-                             recent_jobs=recent_jobs[:5],
-                             todays_schedule=today_jobs,
-                             )
-
+        return redirect(url_for('administrator.dashboard')) if user_type in ('owner', 'admin') else redirect(url_for('technician.dashboard'))
+        
     except Exception as e:
         logger.error(f"Dashboard loading failed: {e}")
         flash('Failed to load dashboard', 'error')

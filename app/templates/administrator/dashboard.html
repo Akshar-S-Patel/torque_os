@@ -119,84 +119,103 @@
         </div>
     </div>
 
-    <!-- Recent Activity & Overdue Alerts -->
-    <div class="row">
-        <div class="col-lg-7">
-            <div class="card">
-                <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
-                        <i class="ti ti-activity"></i>
-                        Recent Activity
-                    </h5>
-                </div>
-                <div class="card-body p-4 pt-0">
-                    {% if recent_jobs %}
-                    <div class="list-group list-group-flush">
-                        {% for job in recent_jobs[:5] %}
-                        <div class="list-group-item d-flex align-items-center px-0">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
-                                <i class="ti ti-tool text-primary"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">
-                                    {{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}
-                                </div>
-                                <small>Job #{{ job.job_id }} &mdash; {{
-                                    job.job_date }}</small>
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-sm btn-outline-info"
-                                onclick='viewJobDetails({{ job.to_dict() | tojson | safe }})' title="Quick View">
-                                    <i class="ti ti-eye"></i>
-                                </button>
-                            </div>
+<!-- Recent Activity & Overdue Alerts -->
+<div id="recent-activity" class="row">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+                    <i class="ti ti-activity"></i>
+                    Recent Activity
+                </h5>
+                <small style="color:black;">{{ total_jobs }} total</small>
+            </div>
+            <div class="card-body p-4 pt-0">
+                {% if recent_jobs %}
+                <div class="list-group list-group-flush">
+                    {% for job in recent_jobs %}
+                    <div class="list-group-item d-flex align-items-center px-0">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="ti ti-tool text-primary"></i>
                         </div>
-                        {% endfor %}
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">
+                                {{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}
+                            </div>
+                            <small>Job #{{ job.job_id }} &mdash; {{ job.job_date }}</small>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-info"
+                                onclick='viewJobDetails({{ job.to_dict() | tojson | safe }})' title="Quick View">
+                                <i class="ti ti-eye"></i>
+                            </button>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="ti ti-inbox mb-2" style="font-size: 48px;"></i>
-                        <p class="mb-0">No recent activity</p>
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% if total_pages > 1 %}
+                <div class="d-flex justify-content-center mt-3">
+                    <ul class="pagination pagination-sm m-0">
+                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                            <a class="page-link activity-pagination-link" href="{{ url_for('administrator.dashboard', page=page-1) }}">
+                                <i class="ti ti-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item activity-pagination-link {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('administrator.dashboard', page=p) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item activity-pagination-link {% if page == total_pages %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('administrator.dashboard', page=page+1) }}">
+                                <i class="ti ti-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="ti ti-inbox mb-2" style="font-size: 48px;"></i>
+                    <p class="mb-0">No recent activity</p>
+                </div>
+                {% endif %}
             </div>
         </div>
-        <div class="col-lg-5">
-            <div class="card">
-                <div class="card-header" style="background: var(--danger); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
-                        <i class="ti ti-alert-triangle"></i>
-                        Overdue Alerts
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    {% if overdue_bills %}
-                    <div class="list-group list-group-flush">
-                        {% for bill in overdue_bills[:5] %}
-                        <div class="list-group-item d-flex align-items-center justify-content-between px-0">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-3">
-                                    <i class="ti ti-alert-circle text-danger"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-semibold">{{ bill.customer_rel.first_name }} {{ bill.customer_rel.family_name }}</div>
-                                    <small class="text-muted">Job #{{ bill.job_id }}</small>
-                                </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header" style="background: var(--danger); color: gray;">
+                <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+                    <i class="ti ti-alert-triangle"></i>
+                    Overdue Alerts
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                {% if overdue_bills %}
+                <div class="list-group list-group-flush">
+                    {% for bill in overdue_bills[:5] %}
+                    <div class="list-group-item d-flex align-items-center justify-content-between px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-3">
+                                <i class="ti ti-alert-circle text-danger"></i>
                             </div>
-                            <span class="fw-bold text-danger">${{ "%.2f"|format(bill.total_cost|default(0)|float)
-                                }}</span>
+                            <div>
+                                <div class="fw-semibold">{{ bill.customer_rel.first_name }} {{ bill.customer_rel.family_name }}</div>
+                                <small class="text-muted">Job #{{ bill.job_id }}</small>
+                            </div>
                         </div>
-                        {% endfor %}
+                        <span class="fw-bold text-danger">${{ "%.2f"|format(bill.total_cost|default(0)|float) }}</span>
                     </div>
-                    {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="ti ti-circle-check text-success mb-2" style="font-size: 48px;"></i>
-                        <p class="mb-0">No overdue bills</p>
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="ti ti-circle-check text-success mb-2" style="font-size: 48px;"></i>
+                    <p class="mb-0">No overdue bills</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -428,6 +447,22 @@ function viewJobDetails(job) {
     // Show modal
     modal.show();
 }
+
+// Save scroll position when clicking activity pagination links
+document.querySelectorAll('.activity-pagination-link').forEach(link => {
+    link.addEventListener('click', function() {
+        sessionStorage.setItem('activityScrollPos', document.getElementById('recent-activity').getBoundingClientRect().top + window.scrollY);
+    });
+});
+
+// Restore scroll on load
+window.addEventListener('load', function() {
+    const scrollPos = sessionStorage.getItem('activityScrollPos');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('activityScrollPos');
+    }
+});
 
 </script>
 {% endblock %}

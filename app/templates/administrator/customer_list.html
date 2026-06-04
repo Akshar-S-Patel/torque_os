@@ -193,98 +193,118 @@ Customer Management - Administrator Portal
     </div>
 
     <!-- Jobs Overview -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header" style="background: var(--info); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
-                        <i class="ti ti-briefcase"></i>
-                        Jobs Overview
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-vcenter card-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Job ID</th>
-                                    <th>Customer</th>
-                                    <th>Job Date</th>
-                                    <th>Total Cost</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for job in jobs %}
-                                <tr>
-                                    <td>
-                                        <span class="text-white badge bg-primary">#{{ job.job_id }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-user text-primary me-2"></i>
-                                            <div>
-                                                <strong>{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</strong>
-                                                <small class="text-muted d-block">ID: {{ job.customer_rel.customer_id }}</small>
-                                            </div>
+<div class="row" id="jobs-overview">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: var(--info); color: gray;">
+                <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+                    <i class="ti ti-briefcase"></i>
+                    Jobs Overview
+                </h5>
+                <small  class="ms-auto" style="color: black;">{{ total_jobs }} total</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Job ID</th>
+                                <th>Customer</th>
+                                <th>Job Date</th>
+                                <th>Total Cost</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in jobs %}
+                            <tr>
+                                <td>
+                                    <span class="text-white badge bg-primary">#{{ job.job_id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-user text-primary me-2"></i>
+                                        <div>
+                                            <strong>{{ job.customer_rel.first_name }} {{ job.customer_rel.family_name }}</strong>
+                                            <small class="text-muted d-block">ID: {{ job.customer_rel.customer_id }}</small>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span class="d-flex align-items-center gap-1">
-                                            <i class="ti ti-calendar text-muted"></i>
-                                            {{ job.job_date }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="fw-bold text-success">${{ "%.2f"|format(job.total_cost|float)
-                                            }}</span>
-                                    </td>
-                                    <td>
-                                        {% if job.completed == 1 %}
-                                        <span class="text-white badge bg-success">
-                                            <i class="ti ti-circle-check me-1"></i>
-                                            Completed
-                                        </span>
-                                        {% else %}
-                                        <span class="text-white badge bg-warning">
-                                            <i class="ti ti-clock me-1"></i>
-                                            In Progress
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if job.paid == 1 %}
-                                        <span class="text-white badge bg-success">
-                                            <i class="ti ti-credit-card me-1"></i>
-                                            Paid
-                                        </span>
-                                        {% elif job.is_overdue == 1 %}
-                                        <span class="text-white badge bg-danger">
-                                            <i class="ti ti-alert-triangle me-1"></i>
-                                            Bill Overdue
-                                        </span>
-                                        <span style="font-size: x-small;" class="d-block text-danger"><i class="ti ti-alert-circle me-1"></i>Overdue ({{job.days_since_job}} days)</span>
-                                        {% else %}
-                                        <span class="text-white badge bg-warning">
-                                            <i class="ti ti-clock me-1"></i>
-                                            Unpaid
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('technician.modify_job', job_id=job.job_id) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="ti ti-pencil"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="d-flex align-items-center gap-1">
+                                        <i class="ti ti-calendar text-muted"></i>
+                                        {{ job.job_date }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">${{ "%.2f"|format(job.total_cost|float) }}</span>
+                                </td>
+                                <td>
+                                    {% if job.completed %}
+                                    <span class="text-white badge bg-success">
+                                        <i class="ti ti-circle-check me-1"></i>Completed
+                                    </span>
+                                    {% else %}
+                                    <span class="text-white badge bg-warning">
+                                        <i class="ti ti-clock me-1"></i>In Progress
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if job.paid %}
+                                    <span class="text-white badge bg-success">
+                                        <i class="ti ti-credit-card me-1"></i>Paid
+                                    </span>
+                                    {% elif job.is_overdue %}
+                                    <span class="text-white badge bg-danger">
+                                        <i class="ti ti-alert-triangle me-1"></i>Bill Overdue
+                                    </span>
+                                    <span style="font-size: x-small;" class="d-block text-danger">
+                                        <i class="ti ti-alert-circle me-1"></i>Overdue ({{ job.days_since_job }} days)
+                                    </span>
+                                    {% else %}
+                                    <span class="text-white badge bg-warning">
+                                        <i class="ti ti-clock me-1"></i>Unpaid
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('technician.modify_job', job_id=job.job_id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="ti ti-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+
+                <!-- Pagination -->
+                {% if total_job_pages > 1 %}
+                <div class="card-footer d-flex align-items-center">
+                    <ul class="pagination m-0 ms-auto">
+                        <li class="page-item {% if job_page == 1 %}disabled{% endif %}">
+                            <a class="page-link job-pagination-link" href="{{ url_for('administrator.customer_list', page=page, job_page=job_page-1) }}">
+                                <i class="ti ti-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                        {% for p in range(1, total_job_pages + 1) %}
+                        <li class="page-item {% if p == job_page %}active{% endif %}">
+                            <a class="page-link job-pagination-link" href="{{ url_for('administrator.customer_list', page=page, job_page=p) }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if job_page == total_job_pages %}disabled{% endif %}">
+                            <a class="page-link job-pagination-link " href="{{ url_for('administrator.customer_list', page=page, job_page=job_page+1) }}">
+                                Next <i class="ti ti-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+
             </div>
         </div>
     </div>
@@ -464,4 +484,24 @@ Customer Management - Administrator Portal
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block admin_extra_js %}
+<script>
+// Save scroll position when clicking job pagination links
+document.querySelectorAll('.job-pagination-link').forEach(link => {
+    link.addEventListener('click', function() {
+        sessionStorage.setItem('jobsScrollPos', document.getElementById('jobs-overview').getBoundingClientRect().top + window.scrollY);
+    });
+});
+
+// Restore scroll on load only if coming from pagination
+window.addEventListener('load', function() {
+    const scrollPos = sessionStorage.getItem('jobsScrollPos');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos));
+        sessionStorage.removeItem('jobsScrollPos');
+    }
+});
+</script>
 {% endblock %}

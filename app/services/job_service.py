@@ -44,15 +44,18 @@ class JobService:
             self.logger.error(f"Failed to get current jobs: {e}")
             raise
     
-    def get_unpaid_and_pending_jobs(self) -> List[Job]:
+    def get_unpaid_and_pending_jobs(self, page: int = 1, per_page: int = 10) -> Tuple[List[Job], int, int]:
         """
         Get unpaid and pending jobs
 
         Returns:
-            List[Job]: List of unpaid and pending jobs
+            (jobs_list, total_count, total_pages)
         """
         try:
-            return Job.get_unpaid_and_pending_jobs()
+            jobs, total = Job.get_unpaid_and_pending_jobs(page, per_page)
+            total_pages = (total + per_page - 1) // per_page
+
+            return jobs, total, total_pages
         except Exception as e:
             self.logger.error(f"Failed to get unpaid and pending jobs: {e}")
             raise
