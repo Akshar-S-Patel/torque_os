@@ -8,7 +8,6 @@
 
 {% block admin_content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between">
@@ -27,13 +26,12 @@
         </div>
     </div>
 
-    <!-- Services Table -->
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header"
+                <div class="card-header bg-primary"
                     style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
                         <i class="ti ti-list"></i>
                         Services
                     </h5>
@@ -61,11 +59,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="text-white badge bg-facebook">{{ service.category|default('General') }}</span>
+                                        {% set current_category = service.category|default('General') %}
+                                        {% set badge_classes = category_config.get(current_category, 'bg-secondary text-white') %}
+                                        <span class="badge {{ badge_classes }}">{{ current_category }}</span>
                                     </td>
                                     <td>
-                                        <span class="fw-bold text-success">${{
-                                            "%.2f"|format(service.cost|default(0)|float) }}</span>
+                                        <span class="fw-bold text-success">${{ "%.2f"|format(service.cost|default(0)|float) }}</span>
                                     </td>
                                     <td>
                                         {% if service.estimated_duration_minutes %}
@@ -96,7 +95,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1">
-                                           <button type="button" 
+                                            <button type="button" 
                                                 class="btn btn-sm btn-outline-primary edit-service-btn" 
                                                 title="Edit"
                                                 data-bs-toggle="modal" 
@@ -107,17 +106,15 @@
                                                 data-category="{{ service.category or '' }}"
                                                 data-duration="{{ service.estimated_duration_minutes or '' }}"
                                                 data-description="{{ service.description or '' }}">
-                                            <i class="ti ti-pencil"></i>
-                                        </button>
+                                                <i class="ti ti-pencil"></i>
+                                            </button>
                                             <form method="post" action="#" class="d-inline">
-                                                <input type="hidden" name="service_id"
-                                                    value="{{ service.id|default(service.service_id|default('')) }}">
+                                                <input type="hidden" name="service_id" value="{{ service.service_id }}">
                                                 <input type="hidden" name="action" value="toggle">
                                                 <button type="submit"
                                                     class="btn btn-sm btn-outline-{% if service.is_active %}warning{% else %}success{% endif %}"
                                                     title="{% if service.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                                    <i
-                                                        class="ti ti-{% if service.is_active %}player-pause{% else %}player-play{% endif %}"></i>
+                                                    <i class="ti ti-{% if service.is_active %}player-pause{% else %}player-play{% endif %}"></i>
                                                 </button>
                                             </form>
                                         </div>
@@ -136,12 +133,18 @@
                     </div>
                 </div>
             </div>
+            
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-3 px-3 py-2 bg-light rounded border">
+                <small class="text-muted fw-bold text-uppercase me-1">Category Legend:</small>
+                {% for category, style_classes in category_config.items() %}
+                    <span class="badge {{ style_classes }}">{{ category }}</span>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Service Model -->
- <div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
+<div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <form method="POST" action="{{ url_for('administrator.service_catalog') }}" class="modal-content">
             <div class="modal-header bg-light">
@@ -173,7 +176,11 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="edit_category" class="form-label fw-bold">Category</label>
-                        <input type="text" class="form-control" id="edit_category" name="category" maxlength="50" placeholder="e.g. General">
+                        <select class="form-select" id="edit_category" name="category">
+                            {% for cat in category_config.keys() %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -201,7 +208,6 @@
     </div>
 </div>
 
-<!-- Add Service Modal -->
 <div class="modal fade" id="addServiceModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="border-top: 4px solid var(--success);">
@@ -212,30 +218,27 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="#">
+            <form method="post" action="{{ url_for('administrator.service_catalog') }}">
+                <input type="hidden" name="action" value="add">
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Service Name *</label>
-                            <input type="text" class="form-control" name="service_name" required
-                                placeholder="e.g. Oil Change">
+                            <input type="text" class="form-control" name="service_name" required placeholder="e.g. Oil Change">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Category</label>
+                            <label class="form-label fw-bold">Category</label>
                             <select class="form-select" name="category">
-                                <option value="General">General</option>
-                                <option value="Maintenance">Maintenance</option>
-                                <option value="Repair">Repair</option>
-                                <option value="Diagnostics">Diagnostics</option>
-                                <option value="Body Work">Body Work</option>
+                                {% for cat in category_config.keys() %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Cost *</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="cost" step="0.01" min="0" required
-                                    placeholder="0.00">
+                                <input type="number" class="form-control" name="cost" step="0.01" min="0" required placeholder="0.00">
                             </div>
                         </div>
                         <div class="col-12">
@@ -269,34 +272,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (editModal) {
         editModal.addEventListener('show.bs.modal', function (event) {
-            // Button that triggered the modal
             const button = event.relatedTarget;
             
-            // Extract info from data-* attributes
             const id = button.getAttribute('data-id');
             const name = button.getAttribute('data-name');
             const cost = button.getAttribute('data-cost');
-            const category = button.getAttribute('data-category');
+            const category = button.getAttribute('data-category') || 'General';
             const description = button.getAttribute('data-description');
-            const durationRaw = button.getAttribute('data-duration'); // raw minutes from DB
+            const durationRaw = button.getAttribute('data-duration');
             
-            // Calculate hours and minutes for split UI fields
-            let hours = "";
-            let mins = "";
+            let hours = "0";
+            let mins = "0";
 
             if (durationRaw && durationRaw.trim() !== "") {
                 const totalMins = parseInt(durationRaw, 10);
-                hours = Math.floor(totalMins / 60); // Evaluates to 0 if total minutes < 60
+                hours = Math.floor(totalMins / 60);
                 mins = totalMins % 60;
             }
 
-            // Populate the form fields
             editModal.querySelector('#edit_service_id').value = id;
             editModal.querySelector('#edit_service_name').value = name;
             editModal.querySelector('#edit_cost').value = cost;
             editModal.querySelector('#edit_category').value = category;
             editModal.querySelector('#edit_description').value = description;
-            // Populate split duration inputs
             editModal.querySelector('#edit_duration_hours').value = hours;
             editModal.querySelector('#edit_duration_minutes').value = mins;
         });

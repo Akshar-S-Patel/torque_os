@@ -737,6 +737,14 @@ def invite_team_member():
 @log_function_call
 def service_catalog():
     """Service catalog management"""
+    
+    CATEGORY_CONFIG = {
+        'General': 'bg-bitbucket text-white',
+        'Maintenance': 'bg-warning text-dark',
+        'Repair': 'bg-orange text-white',
+        'Diagnostics': 'bg-info text-white',
+        'Body Work': 'bg-purple text-white'
+    }
     redirect_response = require_admin_login()
     if redirect_response:
         return redirect_response
@@ -761,11 +769,15 @@ def service_catalog():
     try:
         g.current_tenant_id = tenant_id
         services = Service.get_all_sorted()
-        return render_template('administrator/service_catalog.html', services=services)
+        return render_template('administrator/service_catalog.html', 
+                               services=services, 
+                               category_config=CATEGORY_CONFIG,)
     except Exception as e:
         logger.error(f"Failed to load service catalog: {e}")
         flash('Failed to load service catalog', 'error')
-        return render_template('administrator/service_catalog.html', services=[])
+        return render_template('administrator/service_catalog.html', 
+                               services=[],
+                               category_config=CATEGORY_CONFIG,)
 
 
 # ==========================================
