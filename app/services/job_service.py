@@ -23,7 +23,7 @@ class JobService:
         """Get current tenant ID from Flask g context"""
         return getattr(g, 'current_tenant_id', None)
 
-    def get_current_jobs(self, page: int = 1, per_page: int = 10) -> Tuple[List[Job], int, int]:
+    def get_current_jobs(self, page: int = 1, per_page: int = 10, with_assignee: bool = False) -> Tuple[List[Job], int, int]:
         """
         Get current incomplete jobs with pagination
 
@@ -35,7 +35,7 @@ class JobService:
             (jobs_list, total_count, total_pages)
         """
         try:
-            jobs, total = Job.get_current_jobs(page, per_page)
+            jobs, total = Job.get_current_jobs(page, per_page, with_assignee)
             total_pages = (total + per_page - 1) // per_page
 
             return jobs, total, total_pages
@@ -44,7 +44,7 @@ class JobService:
             self.logger.error(f"Failed to get current jobs: {e}")
             raise
     
-    def get_unpaid_and_pending_jobs(self, page: int = 1, per_page: int = 10) -> Tuple[List[Job], int, int]:
+    def get_unpaid_and_pending_jobs(self, page: int = 1, per_page: int = 10, with_assignee: bool = False) -> Tuple[List[Job], int, int]:
         """
         Get unpaid and pending jobs
 
@@ -52,7 +52,7 @@ class JobService:
             (jobs_list, total_count, total_pages)
         """
         try:
-            jobs, total = Job.get_unpaid_and_pending_jobs(page, per_page)
+            jobs, total = Job.get_unpaid_and_pending_jobs(page, per_page, with_assignee)
             total_pages = (total + per_page - 1) // per_page
 
             return jobs, total, total_pages
@@ -63,7 +63,7 @@ class JobService:
     def get_job_by_id(self, job_id: int) -> Optional[Job]:
         """Get job by ID"""
         try:
-            return Job.find_by_id(job_id)
+            return Job.find_by_id(job_id, True)
         except Exception as e:
             self.logger.error(f"Failed to get job (ID: {job_id}): {e}")
             raise

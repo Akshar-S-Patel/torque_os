@@ -5,8 +5,8 @@ Work orders with services and parts, multi-tenant scoped
 from typing import List, Optional, Tuple
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import String, Date, Numeric, Boolean, Integer, ForeignKey, and_
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Date, Numeric, Boolean, Integer, ForeignKey, and_, inspect
+from sqlalchemy.orm import Mapped, mapped_column, relationship, joinedload
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.extensions import db
 from app.models.base import BaseModelMixin, TenantScopedMixin
@@ -76,8 +76,8 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
     tenant: Mapped[Optional["Tenant"]] = relationship("Tenant", backref="jobs")
 
     @classmethod
-    def _paginated_jobs(cls, filters: list, page: int, per_page: int) -> Tuple[List['Job'], int]:
-        """Private helper: apply filters, paginate, return (jobs, total)"""
+    def _paginated_jobs(cls, filters: list, page: int, per_page: int, with_assignee: bool = False) -> Tuple[List['Job'], int]:
+        """Private helper: apply filters, paginate, conditionally load assignee, return (jobs, total)"""
         from app.models.customer import Customer
 
         total = db.session.execute(
@@ -85,34 +85,40 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
         ).scalar() or 0
 
         offset = (page - 1) * per_page
+        
+        query = db.select(cls)
+        
+        if with_assignee:
+            query = query.options(joinedload(cls.assignee))
+            
         query = (
-            db.select(cls)
-            .where(and_(*filters))
+            query.where(and_(*filters))
             .join(Customer, cls.customer == Customer.customer_id)
             .order_by(Customer.first_name, Customer.family_name, cls.job_date.desc())
             .offset(offset)
             .limit(per_page)
         )
+        
         jobs = list(db.session.execute(query).scalars())
         return jobs, total
 
     @classmethod
-    def get_current_jobs(cls, page: int = 1, per_page: int = 10) -> Tuple[List['Job'], int]:
+    def get_current_jobs(cls, page: int = 1, per_page: int = 10, with_assignee: bool = False) -> Tuple[List['Job'], int]:
         """Get current incomplete jobs with pagination, scoped to tenant"""
         filters = [cls.completed == False]
         tenant_id = cls._get_current_tenant_id()
         if tenant_id:
             filters.append(cls.tenant_id == tenant_id)
-        return cls._paginated_jobs(filters, page, per_page)
+        return cls._paginated_jobs(filters, page, per_page, with_assignee)
 
     @classmethod
-    def get_unpaid_and_pending_jobs(cls, page: int = 1, per_page: int = 10) -> Tuple[List['Job'], int]:
+    def get_unpaid_and_pending_jobs(cls, page: int = 1, per_page: int = 10, with_assignee: bool = False) -> Tuple[List['Job'], int]:
         """Get unpaid and pending jobs with pagination, scoped to tenant"""
         filters = [db.or_(cls.paid == False, cls.completed == False)]
         tenant_id = cls._get_current_tenant_id()
         if tenant_id:
             filters.append(cls.tenant_id == tenant_id)
-        return cls._paginated_jobs(filters, page, per_page)
+        return cls._paginated_jobs(filters, page, per_page, with_assignee)
     
     @classmethod
     def get_all_with_customer_info(cls) -> List['Job']:
@@ -319,6 +325,10 @@ class Job(db.Model, BaseModelMixin, TenantScopedMixin):
             data['customer_id'] = self.customer_rel.customer_id
             data['phone'] = self.customer_rel.phone
             data['email'] = self.customer_rel.email
+        
+        if 'assignee' not in inspect(self).unloaded and self.assignee:
+            data['assignee_name'] = getattr(self.assignee, 'username', False)
+        
         return data
 
 

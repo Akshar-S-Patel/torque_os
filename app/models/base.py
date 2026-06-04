@@ -5,7 +5,7 @@ Provides common functionality for SQLAlchemy models
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Type, TypeVar
 from sqlalchemy import inspect, Integer, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, joinedload
 from flask import g
 from app.extensions import db
 
@@ -28,9 +28,14 @@ class BaseModelMixin:
         return True
 
     @classmethod
-    def find_by_id(cls: Type[T], pk_value: Any) -> Optional[T]:
-        """Find a record by primary key"""
-        return db.session.get(cls, pk_value)
+    def find_by_id(cls: Type[T], pk_value: Any, with_assignee: bool = False) -> Optional[T]:
+        """Find a record by primary key with optional eager loading for assignee."""
+        options = []
+        
+        if with_assignee and hasattr(cls, 'assignee'):
+            options.append(joinedload(cls.assignee))
+
+        return db.session.get(cls, pk_value, options=options)
 
     @classmethod
     def find_all(cls: Type[T], order_by: Optional[str] = None) -> List[T]:

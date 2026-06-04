@@ -394,8 +394,8 @@ function viewJobDetails(job) {
     const totalCost = job.total_cost !== undefined && job.total_cost !== null 
         ? parseFloat(job.total_cost).toFixed(2) 
         : '0.00';
-    const assigneeStr = job.assigned_to 
-        ? `User ID: ${job.assigned_to}` 
+    const assigneeStr = job.assignee_name 
+        ? `${job.assignee_name}` 
         : `<span class="text-muted">Not yet assigned</span>`;
 
     // 5. Safely Extract & Format Phone and Email

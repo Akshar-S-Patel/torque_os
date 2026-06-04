@@ -40,7 +40,7 @@ def current_jobs(page=1, per_page=10):
         return redirect_response
 
     try:
-        jobs, total, total_pages = job_service.get_current_jobs(page, per_page)
+        jobs, total, total_pages = job_service.get_current_jobs(page, per_page, True)
 
         return render_template('technician/current_jobs.html',
                             data=jobs,

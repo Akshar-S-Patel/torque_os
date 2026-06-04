@@ -56,9 +56,9 @@ def dashboard():
         customers_with_unpaid = customer_service.get_customers_with_filter(has_unpaid=True)
         customers_with_overdue = customer_service.get_customers_with_filter(has_overdue=True)
 
-        recent_jobs, total_jobs, total_pages = job_service.get_unpaid_and_pending_jobs(page=page, per_page=per_page)
+        recent_jobs, total_jobs, total_pages = job_service.get_unpaid_and_pending_jobs(page=page, per_page=per_page, with_assignee=True)
         overdue_bills = billing_service.get_overdue_bills()[:5]
-
+        
         return render_template('administrator/dashboard.html',
                                job_stats=job_stats,
                                billing_stats=billing_stats,

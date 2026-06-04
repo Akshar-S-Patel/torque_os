@@ -75,10 +75,21 @@ Modify Job #{{ data.job_id }} - TorqueOS
                             </div>
                         </div>
                         <div class="info-item">
+                            <label class="info-label">Assigned To: </label>
+                            <div class="info-value">
+                                <i class="ti ti-user me-2 text-primary"></i>
+                                {% if data.assignee_name %}
+                                    {{ data.assignee_name }}
+                                {% else %}
+                                    <span class="text-muted">Not yet assigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="info-item">
                             <label class="info-label">Total Cost</label>
                             <div class="info-value">
                                 <i class="ti ti-currency-dollar me-2 text-success"></i>
-                                ${{ "%.2f"|format(data.total_cost|float) }}
+                                {{ "%.2f"|format(data.total_cost|float) }}
                             </div>
                         </div>
                     </div>
