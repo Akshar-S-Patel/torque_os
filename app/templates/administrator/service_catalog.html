@@ -32,8 +32,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
+                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
                         <i class="ti ti-list"></i>
                         Services
                     </h5>
@@ -61,15 +61,28 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="text-white badge bg-light">{{ service.category|default('General') }}</span>
+                                        <span class="text-white badge bg-facebook">{{ service.category|default('General') }}</span>
                                     </td>
                                     <td>
                                         <span class="fw-bold text-success">${{
                                             "%.2f"|format(service.cost|default(0)|float) }}</span>
                                     </td>
-                                    <td>{{ service.duration|default('N/A') }}</td>
                                     <td>
-                                        {% if service.active|default(true) %}
+                                        {% if service.estimated_duration_minutes %}
+                                            {% set hrs = service.estimated_duration_minutes // 60 %}
+                                            {% set mins = service.estimated_duration_minutes % 60 %}
+                                            
+                                            {% if hrs > 0 %}
+                                                <strong>{{ hrs }}h</strong> {{ mins }}m
+                                            {% else %}
+                                                {{ mins }} mins
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if service.is_active %}
                                         <span class="text-white badge bg-success">
                                             <i class="ti ti-circle-check me-1"></i>
                                             Active
@@ -83,18 +96,28 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" title="Edit">
-                                                <i class="ti ti-pencil"></i>
-                                            </button>
+                                           <button type="button" 
+                                                class="btn btn-sm btn-outline-primary edit-service-btn" 
+                                                title="Edit"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editServiceModal"
+                                                data-id="{{ service.service_id }}"
+                                                data-name="{{ service.service_name }}"
+                                                data-cost="{{ service.cost }}"
+                                                data-category="{{ service.category or '' }}"
+                                                data-duration="{{ service.estimated_duration_minutes or '' }}"
+                                                data-description="{{ service.description or '' }}">
+                                            <i class="ti ti-pencil"></i>
+                                        </button>
                                             <form method="post" action="#" class="d-inline">
                                                 <input type="hidden" name="service_id"
                                                     value="{{ service.id|default(service.service_id|default('')) }}">
                                                 <input type="hidden" name="action" value="toggle">
                                                 <button type="submit"
-                                                    class="btn btn-sm btn-outline-{% if service.active|default(true) %}warning{% else %}success{% endif %}"
-                                                    title="{% if service.active|default(true) %}Deactivate{% else %}Activate{% endif %}">
+                                                    class="btn btn-sm btn-outline-{% if service.is_active %}warning{% else %}success{% endif %}"
+                                                    title="{% if service.is_active %}Deactivate{% else %}Activate{% endif %}">
                                                     <i
-                                                        class="ti ti-{% if service.active|default(true) %}player-pause{% else %}player-play{% endif %}"></i>
+                                                        class="ti ti-{% if service.is_active %}player-pause{% else %}player-play{% endif %}"></i>
                                                 </button>
                                             </form>
                                         </div>
@@ -114,6 +137,67 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Edit Service Model -->
+ <div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('administrator.service_catalog') }}" class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="editServiceModalLabel">
+                    <i class="ti ti-pencil me-2 text-primary"></i>Edit Service
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="service_id" id="edit_service_id">
+                
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="edit_service_name" class="form-label fw-bold">Service Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_service_name" name="service_name" required maxlength="100">
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="edit_cost" class="form-label fw-bold">Cost <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="edit_cost" name="cost" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_category" class="form-label fw-bold">Category</label>
+                        <input type="text" class="form-control" id="edit_category" name="category" maxlength="50" placeholder="e.g. General">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Duration</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="number" class="form-control text-center" id="edit_duration_hours" name="estimated_duration_hours" min="0" placeholder="0" style="width: 85px;">
+                            <span class="text-muted">hrs</span>
+                            <input type="number" class="form-control text-center" id="edit_duration_minutes" name="estimated_duration_minutes" min="0" max="59" placeholder="0" style="width: 85px;">
+                            <span class="text-muted">mins</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="edit_description" class="form-label fw-bold">Description</label>
+                    <textarea class="form-control" id="edit_description" name="description" rows="3" maxlength="500"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -155,8 +239,13 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Estimated Duration</label>
-                            <input type="text" class="form-control" name="duration" placeholder="e.g. 1 hour">
+                            <label class="form-label fw-bold">Estimated Duration</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="number" class="form-control text-center" name="duration_hours" min="0" placeholder="0" style="width: 85px;">
+                                <span class="text-muted">hrs</span>
+                                <input type="number" class="form-control text-center" name="duration_minutes" min="0" max="59" placeholder="0" style="width: 85px;">
+                                <span class="text-muted">mins</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -171,4 +260,47 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block admin_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = document.getElementById('editServiceModal');
+    
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            const button = event.relatedTarget;
+            
+            // Extract info from data-* attributes
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            const cost = button.getAttribute('data-cost');
+            const category = button.getAttribute('data-category');
+            const description = button.getAttribute('data-description');
+            const durationRaw = button.getAttribute('data-duration'); // raw minutes from DB
+            
+            // Calculate hours and minutes for split UI fields
+            let hours = "";
+            let mins = "";
+
+            if (durationRaw && durationRaw.trim() !== "") {
+                const totalMins = parseInt(durationRaw, 10);
+                hours = Math.floor(totalMins / 60); // Evaluates to 0 if total minutes < 60
+                mins = totalMins % 60;
+            }
+
+            // Populate the form fields
+            editModal.querySelector('#edit_service_id').value = id;
+            editModal.querySelector('#edit_service_name').value = name;
+            editModal.querySelector('#edit_cost').value = cost;
+            editModal.querySelector('#edit_category').value = category;
+            editModal.querySelector('#edit_description').value = description;
+            // Populate split duration inputs
+            editModal.querySelector('#edit_duration_hours').value = hours;
+            editModal.querySelector('#edit_duration_minutes').value = mins;
+        });
+    }
+});
+</script>
 {% endblock %}

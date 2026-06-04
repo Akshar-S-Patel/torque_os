@@ -8,7 +8,6 @@
 
 {% block admin_content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between">
@@ -23,7 +22,6 @@
         </div>
     </div>
 
-    <!-- Stock Levels Table -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -47,20 +45,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in inventory|default([]) %}
-                                {% set needs_reorder = item.on_hand|default(0)|int <= item.reorder_level|default(0)|int
-                                    %} <tr class="{% if needs_reorder %}table-warning{% endif %}">
+                                {% for item in inventory_items|default([]) %}
+                                {% set needs_reorder = item.quantity_on_hand|default(0)|int <= item.reorder_level|default(0)|int %} 
+                                <tr class="{% if needs_reorder %}table-warning{% endif %}">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <i
-                                                class="ti ti-puzzle text-{% if needs_reorder %}warning{% else %}primary{% endif %} me-2"></i>
+                                            <i class="ti ti-puzzle text-{% if needs_reorder %}warning{% else %}primary{% endif %} me-2"></i>
                                             <strong>{{ item.part_name|default(item.name) }}</strong>
                                         </div>
                                     </td>
                                     <td>
-                                        <span
-                                            class="fw-bold {% if needs_reorder %}text-danger{% else %}text-success{% endif %}">
-                                            {{ item.on_hand|default(0) }}
+                                        <span class="fw-bold {% if needs_reorder %}text-danger{% else %}text-success{% endif %}">
+                                            {{ item.quantity_on_hand|default(0) }}
                                         </span>
                                     </td>
                                     <td>{{ item.reorder_level|default(0) }}</td>
@@ -78,15 +74,15 @@
                                         </span>
                                         {% endif %}
                                     </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">
-                                            <i class="ti ti-package mb-2 d-block mx-auto" style="font-size: 48px;"></i>
-                                            No inventory data available
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="ti ti-package mb-2 d-block mx-auto" style="font-size: 48px;"></i>
+                                        No inventory data available
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -95,7 +91,6 @@
         </div>
     </div>
 
-    <!-- Transaction History -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -119,12 +114,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for txn in transactions|default([]) %}
+                                {% for txn in recent_transactions|default([]) %}
                                 <tr>
                                     <td>
                                         <span class="d-flex align-items-center gap-1">
                                             <i class="ti ti-calendar text-muted"></i>
-                                            {{ txn.date }}
+                                            {{ txn.created_at.strftime('%Y-%m-%d') if txn.created_at else 'N/A' }}
                                         </span>
                                     </td>
                                     <td>
@@ -149,10 +144,8 @@
                                     </td>
                                     <td>{{ txn.part_name|default('N/A') }}</td>
                                     <td>
-                                        <span
-                                            class="fw-bold {% if txn.type == 'in' or txn.type == 'received' %}text-success{% else %}text-danger{% endif %}">
-                                            {% if txn.type == 'in' or txn.type == 'received' %}+{% else %}-{% endif %}{{
-                                            txn.quantity|default(0) }}
+                                        <span class="fw-bold {% if txn.type == 'in' or txn.type == 'received' %}text-success{% else %}text-danger{% endif %}">
+                                            {% if txn.type == 'in' or txn.type == 'received' %}+{% else %}-{% endif %}{{ txn.quantity|default(0) }}
                                         </span>
                                     </td>
                                     <td>{{ txn.performed_by|default('System') }}</td>

@@ -742,7 +742,6 @@ def service_catalog():
         return redirect_response
 
     from app.models.service import Service
-    from app.extensions import db
 
     tenant_id = session.get('current_tenant_id') or getattr(g, 'current_tenant_id', None)
 
@@ -750,42 +749,11 @@ def service_catalog():
         action = request.form.get('action', 'add')
 
         if action == 'add':
-            data = {
-                'service_name': sanitize_input(request.form.get('service_name', '')),
-                'cost': request.form.get('cost'),
-            }
-            validation = validate_service_data(data)
-            if not validation.is_valid:
-                for error in validation.get_errors():
-                    flash(error, 'error')
-            else:
-                try:
-                    service = Service(
-                        tenant_id=tenant_id,
-                        service_name=data['service_name'],
-                        cost=float(data['cost']),
-                        category=sanitize_input(request.form.get('category', 'General')),
-                        description=sanitize_input(request.form.get('description', '')),
-                        estimated_duration_minutes=request.form.get('estimated_duration', type=int),
-                        is_active=True,
-                    )
-                    db.session.add(service)
-                    db.session.commit()
-                    flash(f'Service {data["service_name"]} added!', 'success')
-                except Exception as e:
-                    logger.error(f"Failed to add service: {e}")
-                    db.session.rollback()
-                    flash('Failed to add service', 'error')
-
+            _handle_add_service(tenant_id)
         elif action == 'toggle':
-            service_id = request.form.get('service_id', type=int)
-            if service_id:
-                service = Service.find_by_id(service_id)
-                if service:
-                    service.is_active = not service.is_active
-                    db.session.commit()
-                    status = 'activated' if service.is_active else 'deactivated'
-                    flash(f'Service {status}!', 'success')
+            _handle_toggle_service()
+        elif action == 'edit':
+            _handle_edit_service(tenant_id)
 
         return redirect(url_for('administrator.service_catalog'))
 
@@ -798,6 +766,118 @@ def service_catalog():
         logger.error(f"Failed to load service catalog: {e}")
         flash('Failed to load service catalog', 'error')
         return render_template('administrator/service_catalog.html', services=[])
+
+
+# ==========================================
+# Private Helper Methods (POST Actions)
+# ==========================================
+
+def _handle_add_service(tenant_id):
+    """Handles the creation of a new service entry."""
+    from app.models.service import Service
+    from app.extensions import db
+
+    data = {
+        'service_name': sanitize_input(request.form.get('service_name', '')),
+        'cost': request.form.get('cost'),
+    }
+    validation = validate_service_data(data)
+    if not validation.is_valid:
+        for error in validation.get_errors():
+            flash(error, 'error')
+        return
+
+    # Parse and compound duration tokens into minutes
+    h_input = request.form.get('duration_hours', '').strip()
+    m_input = request.form.get('duration_minutes', '').strip()
+    
+    total_minutes = None
+    if h_input or m_input:
+        total_minutes = (int(h_input or 0) * 60) + int(m_input or 0)
+
+    try:
+        service = Service(
+            tenant_id=tenant_id,
+            service_name=data['service_name'],
+            cost=float(data['cost']),
+            category=sanitize_input(request.form.get('category', 'General')),
+            description=sanitize_input(request.form.get('description', '')),
+            estimated_duration_minutes=total_minutes,
+            is_active=True,
+        )
+        db.session.add(service)
+        db.session.commit()
+        flash(f'Service {data["service_name"]} added!', 'success')
+    except Exception as e:
+        logger.error(f"Failed to add service: {e}")
+        db.session.rollback()
+        flash('Failed to add service', 'error')
+
+
+def _handle_toggle_service():
+    """Toggles the active state of an existing service."""
+    from app.models.service import Service
+    from app.extensions import db
+
+    service_id = request.form.get('service_id', type=int)
+    if not service_id:
+        return
+
+    service = Service.find_by_id(service_id)
+    if service:
+        service.is_active = not service.is_active
+        db.session.commit()
+        status = 'activated' if service.is_active else 'deactivated'
+        flash(f'Service {status}!', 'success')
+
+
+def _handle_edit_service(tenant_id):
+    """Handles updating attributes for an existing service with multi-tenant checking."""
+    from app.models.service import Service
+    from app.extensions import db
+
+    service_id = request.form.get('service_id', type=int)
+    if not service_id:
+        flash('Service ID is required for editing.', 'error')
+        return
+
+    service = Service.find_by_id(service_id)
+    
+    if not service or (tenant_id and service.tenant_id != tenant_id):
+        flash('Service not found or access denied.', 'error')
+        return
+
+    data = {
+        'service_name': sanitize_input(request.form.get('service_name', '')),
+        'cost': request.form.get('cost'),
+    }
+    validation = validate_service_data(data)
+    if not validation.is_valid:
+        for error in validation.get_errors():
+            flash(error, 'error')
+        return
+
+    # Parse and compound update duration tokens into minutes
+    h_input = request.form.get('estimated_duration_hours', '').strip()
+    m_input = request.form.get('estimated_duration_minutes', '').strip()
+
+    try:
+        service.service_name = data['service_name']
+        service.cost = float(data['cost'])
+        service.category = sanitize_input(request.form.get('category', 'General'))
+        service.description = sanitize_input(request.form.get('description', ''))
+        
+        if h_input or m_input:
+            service.estimated_duration_minutes = (int(h_input or 0) * 60) + int(m_input or 0)
+        else:
+            service.estimated_duration_minutes = None
+
+        db.session.commit()
+        flash(f'Service "{service.service_name}" updated successfully!', 'success')
+    except Exception as e:
+        logger.error(f"Failed to update service {service_id}: {e}")
+        db.session.rollback()
+        flash('Failed to update service due to a system error.', 'error')
 
 
 # =============================================================================
