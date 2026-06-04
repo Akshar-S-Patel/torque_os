@@ -1,11 +1,6 @@
 {% extends "base/layout_with_sidebar.html" %}
 {% block title %}Reports - Administrator Portal{% endblock %}
 
-{% block breadcrumb_items %}
-<li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-<li class="breadcrumb-item active">Reports</li>
-{% endblock %}
-
 {% block admin_content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
@@ -47,37 +42,46 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card mb-0">
-                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+            <div class="card mb-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 text-white">
                         <i class="ti ti-briefcase"></i>
                         Job Statistics
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">{{ job_stats.total_jobs|default(0) }}</div>
-                                <small class="text-muted">Total Jobs</small>
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-8">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: var(--primary-bg);">
+                                        <div class="h2 mb-0 text-primary">{{ job_stats.total_jobs|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Total Jobs</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(22,163,74,0.08);">
+                                        <div class="h2 mb-0 text-success">{{ job_stats.completed_jobs|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Completed</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(245,158,11,0.08);">
+                                        <div class="h2 mb-0 text-warning">{{ job_stats.pending_jobs|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">In Progress</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(13,110,253,0.08);">
+                                        <div class="h2 mb-0 text-info">{{ job_stats.completion_rate|default('0') }}%</div>
+                                        <small class="text-muted fw-semibold">Completion Rate</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">{{ job_stats.completed_jobs|default(0) }}</div>
-                                <small class="text-muted">Completed</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">{{ job_stats.pending_jobs|default(0) }}</div>
-                                <small class="text-muted">In Progress</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(13,110,253,0.1);">
-                                <div class="h2 mb-0 text-info">{{ job_stats.completion_rate|default('0') }}%</div>
-                                <small class="text-muted">Completion Rate</small>
+                        <div class="col-lg-4 d-flex justify-content-center border-start-lg">
+                            <div style="position: relative; height: 220px; width: 100%; max-width: 340px;">
+                                <canvas id="jobStatsChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -88,37 +92,46 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card mb-0">
-                <div class="card-header" style="background: var(--info); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+            <div class="card mb-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 text-white">
                         <i class="ti ti-currency-dollar"></i>
                         Payment Statistics
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">${{ "%.2f"|format(billing_stats.total_revenue|default(0)|float) }}</div>
-                                <small class="text-muted">Total Revenue</small>
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-8">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: var(--primary-bg);">
+                                        <div class="h2 mb-0 text-primary">${{ "%.2f"|format(billing_stats.total_revenue|default(0)|float) }}</div>
+                                        <small class="text-muted fw-semibold">Total Revenue</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(22,163,74,0.08);">
+                                        <div class="h2 mb-0 text-success">${{ "%.2f"|format(billing_stats.paid_amount|default(0)|float) }}</div>
+                                        <small class="text-muted fw-semibold">Collected</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(245,158,11,0.08);">
+                                        <div class="h2 mb-0 text-warning">${{ "%.2f"|format(billing_stats.unpaid_amount|default(0)|float) }}</div>
+                                        <small class="text-muted fw-semibold">Outstanding</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(220,38,38,0.08);">
+                                        <div class="h2 mb-0 text-danger">${{ "%.2f"|format(billing_stats.overdue_amount|default(0)|float) }}</div>
+                                        <small class="text-muted fw-semibold">Overdue</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">${{ "%.2f"|format(billing_stats.paid_amount|default(0)|float) }}</div>
-                                <small class="text-muted">Collected</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">${{ "%.2f"|format(billing_stats.unpaid_amount|default(0)|float) }}</div>
-                                <small class="text-muted">Outstanding</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(220,38,38,0.1);">
-                                <div class="h2 mb-0 text-danger">${{ "%.2f"|format(billing_stats.overdue_amount|default(0)|float) }}</div>
-                                <small class="text-muted">Overdue</small>
+                        <div class="col-lg-4 d-flex justify-content-center border-start-lg">
+                            <div style="position: relative; height: 220px; width: 100%; max-width: 340px;">
+                                <canvas id="paymentStatsChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -129,37 +142,46 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card mb-0">
-                <div class="card-header" style="background: var(--success); color: gray;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: black;">
+            <div class="card mb-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 text-white">
                         <i class="ti ti-file-text"></i>
                         Billing Status
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: var(--primary-bg);">
-                                <div class="h2 mb-0 text-primary">{{ billing_stats.total_bills|default(0) }}</div>
-                                <small class="text-muted">Total Bills</small>
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-8">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: var(--primary-bg);">
+                                        <div class="h2 mb-0 text-primary">{{ billing_stats.total_bills|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Total Bills</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(22,163,74,0.08);">
+                                        <div class="h2 mb-0 text-success">{{ billing_stats.paid_bills|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Paid Bills</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(245,158,11,0.08);">
+                                        <div class="h2 mb-0 text-warning">{{ billing_stats.unpaid_bills|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Unpaid Bills</small>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded border" style="background: rgba(220,38,38,0.08);">
+                                        <div class="h2 mb-0 text-danger">{{ billing_stats.overdue_bills|default(0) }}</div>
+                                        <small class="text-muted fw-semibold">Overdue Bills</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(22,163,74,0.1);">
-                                <div class="h2 mb-0 text-success">{{ billing_stats.paid_bills|default('0%') }}</div>
-                                <small class="text-muted">With Paid Bills</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(245,158,11,0.1);">
-                                <div class="h2 mb-0 text-warning">{{ customer_stats.customers_with_unpaid|default(0) }}</div>
-                                <small class="text-muted">With Unpaid Bills</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center p-3 rounded" style="background: rgba(220,38,38,0.1);">
-                                <div class="h2 mb-0 text-danger">{{ customer_stats.customers_with_overdue|default(0) }}</div>
-                                <small class="text-muted">With Overdue Bills</small>
+                        <div class="col-lg-4 d-flex justify-content-center border-start-lg">
+                            <div style="position: relative; height: 220px; width: 100%; max-width: 340px;">
+                                <canvas id="billingStatusChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -168,4 +190,176 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block admin_extra_js %}
+<script>
+// ==========================================
+// 1. Chart Extensions
+// ==========================================
+const ChartExtensions = {
+    registerCustomPositioners: () => {
+        Chart.Tooltip.positioners.followMouse = function(elements, eventPosition) {
+            return {
+                x: eventPosition.x,
+                y: eventPosition.y
+            };
+        };
+    }
+};
+
+// ==========================================
+// 2. Custom Plugins
+// ==========================================
+const ChartPlugins = {
+    getCenterPercentagePlugin: () => ({
+        id: 'generalizedCenterPercentage',
+        afterDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom }, data } = chart;
+            ctx.save();
+
+            const dataset = data.datasets[0];
+            const total = dataset.data.reduce((sum, value) => sum + (Number(value) || 0), 0);
+
+            let mainText = "";
+            let subText = "";
+
+            const activeElements = chart.getActiveElements();
+            
+            if (activeElements.length > 0 && total > 0) {
+                const index = activeElements[0].index;
+                const value = dataset.data[index];
+                const percentage = ((value / total) * 100).toFixed(1);
+                
+                mainText = `${percentage}%`;
+                subText = data.labels[index];
+            } else {
+                // Formats numbers cleanly (handles both large integers and floats like revenue)
+                mainText = total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                subText = "Total";
+            }
+
+            const centerX = (left + right) / 2;
+            const centerY = (top + bottom) / 2;
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.font = '600 11px sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(subText.toUpperCase(), centerX, centerY - 12);
+
+            ctx.font = 'bold 22px sans-serif';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText(mainText, centerX, centerY + 10);
+
+            ctx.restore();
+        }
+    })
+};
+
+// ==========================================
+// 3. Configuration Factory
+// ==========================================
+const ChartConfigFactory = {
+    getGlobalDoughnutOptions: () => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                display: true,
+                position: 'right', 
+                align: 'center',    
+                labels: {
+                    boxWidth: 12,   
+                    boxHeight: 12,  
+                    padding: 10,    
+                    font: {
+                        size: 11,   
+                        family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                    }
+                }
+            },
+            tooltip: {
+                position: 'followMouse', 
+                xAlign: 'left',          
+                yAlign: 'center',
+                caretPadding: 15         
+            }
+        },
+        cutout: '70%' 
+    })
+};
+
+// ==========================================
+// 4. Chart Manager (Factory Pattern)
+// ==========================================
+class DoughnutChartManager {
+    static build(canvasId, labels, dataPoints, colors) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return null;
+
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataPoints,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: ChartConfigFactory.getGlobalDoughnutOptions(),
+            plugins: [ChartPlugins.getCenterPercentagePlugin()]
+        });
+    }
+}
+
+// ==========================================
+// 5. Initialization
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    ChartExtensions.registerCustomPositioners();
+
+    // Define reusable color palettes
+    const defaultColors = ['#16a34a', '#f59e0b'];
+    const billingColors = ['#16a34a', '#f59e0b', '#ef4444'];
+
+    // 1. Job Statistics Chart
+    DoughnutChartManager.build(
+        'jobStatsChart',
+        ['Completed', 'In Progress'],
+        [
+            {{ job_stats.completed_jobs|default(0) }}, 
+            {{ job_stats.pending_jobs|default(0) }}
+        ],
+        defaultColors
+    );
+
+    // 2. Payment Statistics Chart
+    DoughnutChartManager.build(
+        'paymentStatsChart',
+        ['Collected', 'Outstanding', 'Overdue'],
+        [
+            {{ billing_stats.paid_amount|default(0)|float }}, 
+            {{ billing_stats.unpaid_amount|default(0)|float }}, 
+            {{ billing_stats.overdue_amount|default(0)|float }}
+        ],
+        billingColors
+    );
+
+    // 3. Billing Status Chart
+    DoughnutChartManager.build(
+        'billingStatusChart',
+        ['Paid', 'Unpaid', 'Overdue'],
+        [
+            {{ billing_stats.paid_bills|default(0) }}, 
+            {{ billing_stats.unpaid_bills|default(0) }}, 
+            {{ billing_stats.overdue_bills|default(0) }}
+        ],
+        billingColors
+    );
+});
+</script>
 {% endblock %}

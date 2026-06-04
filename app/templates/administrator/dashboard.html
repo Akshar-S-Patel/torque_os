@@ -248,30 +248,55 @@
 
 {% block admin_extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+// ==========================================
+// 1. Core Configuration & Extensions
+// ==========================================
+const ChartExtensions = {
+    registerCustomPositioners: () => {
+        Chart.Tooltip.positioners.followMouse = function(elements, eventPosition) {
+            return {
+                x: eventPosition.x,
+                y: eventPosition.y
+            };
+        };
+    }
+};
 
-    const revenueCtx = document.getElementById('revenueChart');
-    let revenueChart = null;
-    const noDataPlugin = {
-        id: 'noData',
-        afterDraw(chart) {
-            const hasData = chart.data.datasets[0].data.some(v => v > 0);
-            if (!hasData) {
-                const { ctx, chartArea: { left, top, width, height } } = chart;
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = '16px sans-serif';
-                ctx.fillStyle = '#9ca3af';
-                ctx.fillText('No revenue data for this year', left + width / 2, top + height / 2);
-                ctx.restore();
+// ==========================================
+// 2. Chart Managers
+// ==========================================
+class RevenueChartManager {
+    constructor(canvasId, selectorId, initialData) {
+        this.ctx = document.getElementById(canvasId);
+        this.selector = document.getElementById(selectorId);
+        this.chartInstance = null;
+        this.initialData = initialData;
+    }
+
+    createNoDataPlugin() {
+        return {
+            id: 'noData',
+            afterDraw(chart) {
+                const hasData = chart.data.datasets[0].data.some(v => v > 0);
+                if (!hasData) {
+                    const { ctx, chartArea: { left, top, width, height } } = chart;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '16px sans-serif';
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.fillText('No revenue data for this year', left + width / 2, top + height / 2);
+                    ctx.restore();
+                }
             }
-        }
-    };
+        };
+    }
 
-    function buildRevenueChart(data) {
-        if (revenueChart) revenueChart.destroy();
-        revenueChart = new Chart(revenueCtx, {
+    buildChart(data) {
+        if (!this.ctx) return;
+        if (this.chartInstance) this.chartInstance.destroy();
+        
+        this.chartInstance = new Chart(this.ctx, {
             type: 'bar',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -287,11 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 25
-                    }
-                },
+                layout: { padding: { top: 25 } },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
@@ -300,41 +321,49 @@ document.addEventListener('DOMContentLoaded', function () {
                         color: '#374151',
                         font: { weight: 'bold', size: 11 },
                         formatter: v => v > 0 ? '$' + v.toFixed(0) : ''
+                    },
+                    tooltip: {
+                        position: 'followMouse', 
+                        xAlign: 'left',          
+                        yAlign: 'center',
+                        caretPadding: 15         
                     }
                 },
                 scales: {
                     y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
-                }
+                },
             },
-            plugins: [ChartDataLabels, noDataPlugin]
+            plugins: [ChartDataLabels, this.createNoDataPlugin()]
         });
     }
 
-    // Initial load
-    buildRevenueChart({{ billing_stats.monthly_revenue | tojson }});
-
-    // Year change
-    document.getElementById('yearSelector').addEventListener('change', function() {
-        fetch(`/administrator/dashboard/revenue?year=${this.value}`)
-            .then(r => r.json())
-            .then(data => buildRevenueChart(data.monthly_revenue))
+    fetchYearlyData(year) {
+        fetch(`/administrator/dashboard/revenue?year=${year}`)
+            .then(response => response.json())
+            .then(data => this.buildChart(data.monthly_revenue))
             .catch(() => console.error('Failed to load revenue data'));
-    });
+    }
 
-    const statusCtx = document.getElementById('statusChart');
-    if (statusCtx) {
-        new Chart(statusCtx, {
+    init() {
+        if (!this.ctx) return;
+        this.buildChart(this.initialData);
+        if (this.selector) {
+            this.selector.addEventListener('change', (e) => this.fetchYearlyData(e.target.value));
+        }
+    }
+}
+
+class StatusChartManager {
+    static init(canvasId, statsData) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['Completed', 'Pending', 'Paid', 'Unpaid', 'Overdue'],
                 datasets: [{
-                    data: [
-                        {{ job_stats.completed_jobs | default(0) }},
-                        {{ job_stats.pending_jobs | default(0) }},
-                        {{ job_stats.total_jobs - job_stats.unpaid_jobs | default(0) }},
-                        {{ job_stats.unpaid_jobs | default(0) }},
-                        {{ job_stats.overdue_jobs | default(0) }}
-                    ],
+                    data: statsData,
                     backgroundColor: ['#14b8a6', '#f59e0b', '#16a34a','#f97316', '#ef4444'],
                     borderWidth: 0
                 }]
@@ -344,125 +373,180 @@ document.addEventListener('DOMContentLoaded', function () {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'bottom' },
-                    datalabels: { display: false },
+                    datalabels: { display: false },    
                     tooltip: {
-                        position: 'nearest',
-                        callbacks: {
-                            label: function(context) {
-                                return ` ${context.label}: ${context.raw}`;
-                            }
-                        }
+                        position: 'followMouse', 
+                        xAlign: 'left',          
+                        yAlign: 'center',
+                        caretPadding: 15         
                     }
                 },
                 cutout: '65%'
             }
         });
     }
-});
-
-function viewJobDetails(job) {
-    // If modal instance already exists, get it, otherwise create a new one
-    const modalElement = document.getElementById('jobDetailsModal');
-    let modal = bootstrap.Modal.getInstance(modalElement);
-    if (!modal) {
-        modal = new bootstrap.Modal(modalElement);
-    }
-    
-    const content = document.getElementById('jobDetailsContent');
-    const editBtn = document.getElementById('editJobBtn');
-
-    // Set edit button link using the job_id
-    editBtn.href = `/technician/jobs/${job.job_id}/modify`;
-
-    // 1. Determine Progress Status
-    const progressBadge = job.completed 
-        ? `<span class="badge bg-success text-white me-1"><i class="ti ti-clock me-1"></i>Completed</span>`
-        : `<span class="badge bg-warning text-white me-1"><i class="ti ti-clock me-1"></i>In Progress</span>`;
-
-    // 2. Determine Payment Status
-    const paymentBadge = job.paid 
-        ? `<span class="badge bg-success text-white"><i class="ti ti-credit-card me-1"></i>Paid</span>`
-        : `<span class="badge bg-danger text-white"><i class="ti ti-credit-card me-1"></i>Unpaid</span>`;
-
-    // 3. Format Overdue Status
-    const overdueWarning = job.is_overdue 
-        ? `<p class="mb-1 text-danger fw-bold"><i class="ti ti-alert-circle me-1"></i>Overdue (${job.days_since_job} days)</p>` 
-        : '';
-
-    // 4. Format Basic Data
-    const jobDate = job.job_date ? new Date(job.job_date).toLocaleDateString() : 'Unknown';
-    const totalCost = job.total_cost !== undefined && job.total_cost !== null 
-        ? parseFloat(job.total_cost).toFixed(2) 
-        : '0.00';
-    const assigneeStr = job.assignee_name 
-        ? `${job.assignee_name}` 
-        : `<span class="text-muted">Not yet assigned</span>`;
-
-    // 5. Safely Extract & Format Phone and Email
-    // Checks both flat mapping and nested mapping just in case
-    const phone = job.phone || (job.customer_rel && job.customer_rel.phone);
-    const email = job.email || (job.customer_rel && job.customer_rel.email);
-
-    const phoneStr = phone 
-        ? `<a href="tel:${phone}" class="text-decoration-none">${phone}</a>` 
-        : `<span class="text-muted">No phone on file</span>`;
-        
-    const emailStr = email 
-        ? `<a href="mailto:${email}" class="text-decoration-none">${email}</a>` 
-        : `<span class="text-muted">No email on file</span>`;
-
-    // Render the modal content synchronously
-    content.innerHTML = `
-    <div class="row mb-3">
-        <div class="col-md-6 mb-3 mb-md-0">
-            <h6 class="text-primary border-bottom pb-2">Job Information</h6>
-            <p class="mb-1"><strong>Job ID:</strong> #${job.job_id}</p>
-            <p class="mb-1"><strong>Status:</strong><br> ${progressBadge} ${paymentBadge}</p>
-            <p class="mb-1 mt-2"><strong>Created:</strong> ${jobDate}</p>
-            <p class="mb-1"><strong>Assigned to:</strong> ${assigneeStr}</p>
-            ${overdueWarning}
-        </div>
-        <div class="col-md-6">
-            <h6 class="text-primary border-bottom pb-2">Customer Information</h6>
-            <p class="mb-1"><strong>Customer ID:</strong> #${job.customer_id || 'N/A'}</p>
-            <p class="mb-1"><strong>Name:</strong> ${job.first_name || ''} ${job.family_name || ''}</p>
-            <p class="mb-1"><strong>Phone:</strong> ${phoneStr}</p>
-            <p class="mb-1"><strong>Email:</strong> ${emailStr}</p>
-        </div>
-    </div>
-    
-    <div class="bg-light p-3 rounded mt-3 border">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="mb-0">Financial Overview</h2>
-                <small class="text-muted">Total includes all parts and services</small>
-            </div>
-            <div class="text-end">
-                <span class="fs-4 fw-bold ${job.paid ? 'text-success' : 'text-danger'}">$${totalCost}</span>
-            </div>
-        </div>
-    </div>
-    `;
-
-    // Show modal
-    modal.show();
 }
 
-// Save scroll position when clicking activity pagination links
-document.querySelectorAll('.activity-pagination-link').forEach(link => {
-    link.addEventListener('click', function() {
-        sessionStorage.setItem('activityScrollPos', document.getElementById('recent-activity').getBoundingClientRect().top + window.scrollY);
-    });
-});
-
-// Restore scroll on load
-window.addEventListener('load', function() {
-    const scrollPos = sessionStorage.getItem('activityScrollPos');
-    if (scrollPos) {
-        window.scrollTo(0, parseInt(scrollPos));
-        sessionStorage.removeItem('activityScrollPos');
+// ==========================================
+// 3. Job Modal Formatters & UI Logic
+// ==========================================
+class JobDataFormatter {
+    static getProgressBadge(completed) {
+        return completed 
+            ? `<span class="badge bg-success text-white me-1"><i class="ti ti-clock me-1"></i>Completed</span>`
+            : `<span class="badge bg-warning text-white me-1"><i class="ti ti-clock me-1"></i>In Progress</span>`;
     }
-});
 
+    static getPaymentBadge(paid) {
+        return paid 
+            ? `<span class="badge bg-success text-white"><i class="ti ti-credit-card me-1"></i>Paid</span>`
+            : `<span class="badge bg-danger text-white"><i class="ti ti-credit-card me-1"></i>Unpaid</span>`;
+    }
+
+    static getOverdueWarning(isOverdue, days) {
+        return isOverdue 
+            ? `<p class="mb-1 text-danger fw-bold"><i class="ti ti-alert-circle me-1"></i>Overdue (${days} days)</p>` 
+            : '';
+    }
+
+    static formatCost(cost) {
+        return cost !== undefined && cost !== null ? parseFloat(cost).toFixed(2) : '0.00';
+    }
+
+    static formatContact(value, type) {
+        if (!value) return `<span class="text-muted">No ${type} on file</span>`;
+        const prefix = type === 'phone' ? 'tel:' : 'mailto:';
+        return `<a href="${prefix}${value}" class="text-decoration-none">${value}</a>`;
+    }
+}
+
+class JobModalUI {
+    constructor() {
+        this.modalElement = document.getElementById('jobDetailsModal');
+        this.contentElement = document.getElementById('jobDetailsContent');
+        this.editBtn = document.getElementById('editJobBtn');
+        this.bootstrapModal = null;
+    }
+
+    show(job) {
+        if (!this.modalElement || !this.contentElement) return;
+
+        if (!this.bootstrapModal) {
+            this.bootstrapModal = new bootstrap.Modal(this.modalElement);
+        }
+
+        this.updateLinks(job.job_id);
+        this.renderContent(job);
+        this.bootstrapModal.show();
+    }
+
+    updateLinks(jobId) {
+        if (this.editBtn) {
+            this.editBtn.href = `/technician/jobs/${jobId}/modify`;
+        }
+    }
+
+    renderContent(job) {
+        const date = job.job_date ? new Date(job.job_date).toLocaleDateString() : 'Unknown';
+        const assignee = job.assignee_name || `<span class="text-muted">Not yet assigned</span>`;
+        const phone = job.phone || (job.customer_rel?.phone);
+        const email = job.email || (job.customer_rel?.email);
+
+        this.contentElement.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <h6 class="text-primary border-bottom pb-2">Job Information</h6>
+                <p class="mb-1"><strong>Job ID:</strong> #${job.job_id}</p>
+                <p class="mb-1"><strong>Status:</strong><br> 
+                    ${JobDataFormatter.getProgressBadge(job.completed)} 
+                    ${JobDataFormatter.getPaymentBadge(job.paid)}
+                </p>
+                <p class="mb-1 mt-2"><strong>Created:</strong> ${date}</p>
+                <p class="mb-1"><strong>Assigned to:</strong> ${assignee}</p>
+                ${JobDataFormatter.getOverdueWarning(job.is_overdue, job.days_since_job)}
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary border-bottom pb-2">Customer Information</h6>
+                <p class="mb-1"><strong>Customer ID:</strong> #${job.customer_id || 'N/A'}</p>
+                <p class="mb-1"><strong>Name:</strong> ${job.first_name || ''} ${job.family_name || ''}</p>
+                <p class="mb-1"><strong>Phone:</strong> ${JobDataFormatter.formatContact(phone, 'phone')}</p>
+                <p class="mb-1"><strong>Email:</strong> ${JobDataFormatter.formatContact(email, 'email')}</p>
+            </div>
+        </div>
+        
+        <div class="bg-light p-3 rounded mt-3 border">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Financial Overview</h2>
+                    <small class="text-muted">Total includes all parts and services</small>
+                </div>
+                <div class="text-end">
+                    <span class="fs-4 fw-bold ${job.paid ? 'text-success' : 'text-danger'}">
+                        $${JobDataFormatter.formatCost(job.total_cost)}
+                    </span>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+}
+
+// ==========================================
+// 4. Application State (Scroll Persistence)
+// ==========================================
+const ScrollStateManager = {
+    key: 'activityScrollPos',
+    
+    save: () => {
+        const container = document.getElementById('recent-activity');
+        if (container) {
+            sessionStorage.setItem(ScrollStateManager.key, container.getBoundingClientRect().top + window.scrollY);
+        }
+    },
+    
+    restore: () => {
+        const scrollPos = sessionStorage.getItem(ScrollStateManager.key);
+        if (scrollPos) {
+            window.scrollTo(0, parseInt(scrollPos));
+            sessionStorage.removeItem(ScrollStateManager.key);
+        }
+    },
+
+    bindEvents: () => {
+        document.querySelectorAll('.activity-pagination-link').forEach(link => {
+            link.addEventListener('click', ScrollStateManager.save);
+        });
+        window.addEventListener('load', ScrollStateManager.restore);
+    }
+};
+
+// ==========================================
+// 5. Initialization
+// ==========================================
+
+// Expose globally for inline onclick handlers
+const modalUI = new JobModalUI();
+window.viewJobDetails = (job) => modalUI.show(job);
+
+document.addEventListener('DOMContentLoaded', () => {
+    ChartExtensions.registerCustomPositioners();
+
+    const revenueManager = new RevenueChartManager(
+        'revenueChart', 
+        'yearSelector', 
+        {{ billing_stats.monthly_revenue | tojson }}
+    );
+    revenueManager.init();
+
+    StatusChartManager.init('statusChart', [
+        {{ job_stats.completed_jobs | default(0) }},
+        {{ job_stats.pending_jobs | default(0) }},
+        {{ job_stats.total_jobs - job_stats.unpaid_jobs | default(0) }},
+        {{ job_stats.unpaid_jobs | default(0) }},
+        {{ job_stats.overdue_jobs | default(0) }}
+    ]);
+
+    ScrollStateManager.bindEvents();
+});
 </script>
 {% endblock %}
