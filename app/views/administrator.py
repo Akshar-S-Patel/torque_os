@@ -906,7 +906,16 @@ def parts_catalog():
         return redirect_response
 
     from app.models.part import Part
-    from app.extensions import db
+    
+    PART_CATEGORY_CONFIG = {
+        'General': 'bg-bitbucket text-white',
+        'Engine': 'bg-danger text-white',
+        'Brakes': 'bg-warning text-dark',
+        'Suspension': 'bg-info text-white',
+        'Electrical': 'bg-teal text-white',
+        'Body': 'bg-purple text-white',
+        'Fluids': 'bg-primary text-white'
+    }
 
     tenant_id = session.get('current_tenant_id') or getattr(g, 'current_tenant_id', None)
 
@@ -914,43 +923,11 @@ def parts_catalog():
         action = request.form.get('action', 'add')
 
         if action == 'add':
-            data = {
-                'part_name': sanitize_input(request.form.get('part_name', '')),
-                'cost': request.form.get('cost'),
-            }
-            validation = validate_part_data(data)
-            if not validation.is_valid:
-                for error in validation.get_errors():
-                    flash(error, 'error')
-            else:
-                try:
-                    part = Part(
-                        tenant_id=tenant_id,
-                        part_name=data['part_name'],
-                        cost=float(data['cost']),
-                        sku=sanitize_input(request.form.get('sku', '')) or None,
-                        category=sanitize_input(request.form.get('category', 'General')),
-                        description=sanitize_input(request.form.get('description', '')),
-                        supplier=sanitize_input(request.form.get('supplier', '')) or None,
-                        is_active=True,
-                    )
-                    db.session.add(part)
-                    db.session.commit()
-                    flash(f'Part {data["part_name"]} added!', 'success')
-                except Exception as e:
-                    logger.error(f"Failed to add part: {e}")
-                    db.session.rollback()
-                    flash('Failed to add part', 'error')
-
+            _handle_add_part(tenant_id)
         elif action == 'toggle':
-            part_id = request.form.get('part_id', type=int)
-            if part_id:
-                part = Part.find_by_id(part_id)
-                if part:
-                    part.is_active = not part.is_active
-                    db.session.commit()
-                    status = 'activated' if part.is_active else 'deactivated'
-                    flash(f'Part {status}!', 'success')
+            _handle_toggle_part()
+        elif action == 'edit':
+            _handle_edit_part(tenant_id)
 
         return redirect(url_for('administrator.parts_catalog'))
 
@@ -958,11 +935,115 @@ def parts_catalog():
     try:
         g.current_tenant_id = tenant_id
         parts = Part.get_all_sorted()
-        return render_template('administrator/parts_catalog.html', parts=parts)
+        return render_template(
+            'administrator/parts_catalog.html', 
+            parts=parts,
+            category_config=PART_CATEGORY_CONFIG
+        )
     except Exception as e:
         logger.error(f"Failed to load parts catalog: {e}")
         flash('Failed to load parts catalog', 'error')
-        return render_template('administrator/parts_catalog.html', parts=[])
+        return render_template(
+            'administrator/parts_catalog.html', 
+            parts=[],
+            category_config=PART_CATEGORY_CONFIG
+        )
+
+# ==========================================
+# Private Helper Methods (POST Actions)
+# ==========================================
+
+def _handle_add_part(tenant_id):
+    """Handles the creation of a new part entry."""
+    from app.models.part import Part
+    from app.extensions import db
+
+    data = {
+        'part_name': sanitize_input(request.form.get('part_name', '')),
+        'cost': request.form.get('cost'),
+    }
+    validation = validate_part_data(data)
+    if not validation.is_valid:
+        for error in validation.get_errors():
+            flash(error, 'error')
+        return
+
+    try:
+        part = Part(
+            tenant_id=tenant_id,
+            part_name=data['part_name'],
+            cost=float(data['cost']),
+            sku=sanitize_input(request.form.get('sku', '')) or None,
+            category=sanitize_input(request.form.get('category', 'General')),
+            supplier=sanitize_input(request.form.get('supplier', '')) or None,
+            is_active=True,
+        )
+        db.session.add(part)
+        db.session.commit()
+        flash(f'Part {data["part_name"]} added!', 'success')
+    except Exception as e:
+        logger.error(f"Failed to add part: {e}")
+        db.session.rollback()
+        flash('Failed to add part', 'error')
+
+
+def _handle_toggle_part():
+    """Toggles the active state of an existing part."""
+    from app.models.part import Part
+    from app.extensions import db
+
+    part_id = request.form.get('part_id', type=int)
+    if not part_id:
+        return
+
+    part = Part.find_by_id(part_id)
+    if part:
+        part.is_active = not part.is_active
+        db.session.commit()
+        status = 'activated' if part.is_active else 'deactivated'
+        flash(f'Part {status}!', 'success')
+
+
+def _handle_edit_part(tenant_id):
+    """Handles updating attributes for an existing part."""
+    from app.models.part import Part
+    from app.extensions import db
+
+    part_id = request.form.get('part_id', type=int)
+    if not part_id:
+        flash('Part ID is required for editing.', 'error')
+        return
+
+    part = Part.find_by_id(part_id)
+    
+    # Cross-Tenant IDOR Guard
+    if not part or (tenant_id and part.tenant_id != tenant_id):
+        flash('Part not found or access denied.', 'error')
+        return
+
+    data = {
+        'part_name': sanitize_input(request.form.get('part_name', '')),
+        'cost': request.form.get('cost'),
+    }
+    validation = validate_part_data(data)
+    if not validation.is_valid:
+        for error in validation.get_errors():
+            flash(error, 'error')
+        return
+
+    try:
+        part.part_name = data['part_name']
+        part.cost = float(data['cost'])
+        part.sku = sanitize_input(request.form.get('sku', '')) or None
+        part.category = sanitize_input(request.form.get('category', 'General'))
+        part.supplier = sanitize_input(request.form.get('supplier', '')) or None
+
+        db.session.commit()
+        flash(f'Part "{part.part_name}" updated successfully!', 'success')
+    except Exception as e:
+        logger.error(f"Failed to update part {part_id}: {e}")
+        db.session.rollback()
+        flash('Failed to update part due to a system error.', 'error')
 
 
 # =============================================================================
