@@ -14,6 +14,24 @@ from app.utils.validators import sanitize_input
 onboarding_bp = Blueprint('onboarding', __name__)
 logger = logging.getLogger(__name__)
 
+# Define or import these so the frontend has access to the color mappings
+CATEGORY_CONFIG = {
+    'General': 'bg-bitbucket text-white',
+    'Maintenance': 'bg-warning text-dark',
+    'Repair': 'bg-orange text-white',
+    'Diagnostics': 'bg-info text-white',
+    'Body Work': 'bg-purple text-white'
+}
+
+PART_CATEGORY_CONFIG = {
+    'General': 'bg-bitbucket text-white',
+    'Engine': 'bg-danger text-white',
+    'Brakes': 'bg-warning text-dark',
+    'Suspension': 'bg-info text-white',
+    'Electrical': 'bg-success text-white',
+    'Body': 'bg-purple text-white',
+    'Fluids': 'bg-primary text-white'
+}
 
 def require_login_and_tenant():
     """Ensure user is logged in and has a tenant context"""
@@ -24,7 +42,6 @@ def require_login_and_tenant():
         flash('Please select or create an organization first', 'warning')
         return redirect(url_for('auth.select_tenant'))
     return None
-
 
 @onboarding_bp.route('/step/<int:step_number>')
 @handle_database_errors
@@ -57,11 +74,13 @@ def step(step_number):
         from app.models.service import Service
         g.current_tenant_id = tenant_id
         context['services'] = Service.get_all_sorted()
+        context['category_config'] = CATEGORY_CONFIG  
 
     elif step_number == 2:
         from app.models.part import Part
         g.current_tenant_id = tenant_id
         context['parts'] = Part.get_all_sorted()
+        context['category_config'] = PART_CATEGORY_CONFIG 
 
     elif step_number == 3:
         # Load pending invitations for this tenant
@@ -161,43 +180,39 @@ def complete():
 def _save_services(tenant_id):
     """Save service catalog (step 1)"""
     from app.models.service import Service
+    from app.extensions import db
     g.current_tenant_id = tenant_id
 
-    # Handle adding custom services
     service_name = sanitize_input(request.form.get('service_name', ''))
     cost = request.form.get('service_cost')
     category = sanitize_input(request.form.get('service_category', ''))
-    duration = request.form.get('service_duration', '')
+    
+    duration_hours = request.form.get('duration_hours', type=int, default=0)
+    duration_minutes = request.form.get('duration_minutes', type=int, default=0)
 
     if service_name and cost:
         try:
             estimated_minutes = None
-            if duration:
-                duration_str = duration.strip().lower()
-                try:
-                    estimated_minutes = int(duration_str)
-                except ValueError:
-                    # Try parsing "1 hour", "30 min", etc.
-                    if 'hour' in duration_str:
-                        estimated_minutes = int(float(duration_str.split()[0]) * 60)
-                    elif 'min' in duration_str:
-                        estimated_minutes = int(duration_str.split()[0])
+            total_time = (duration_hours * 60) + duration_minutes
+            if total_time > 0:
+                estimated_minutes = total_time
 
             service = Service(
                 tenant_id=tenant_id,
                 service_name=service_name,
                 cost=float(cost),
                 category=category or 'General',
-                estimated_duration_minutes=estimated_minutes,
+                estimated_duration_minutes=estimated_minutes,  # Saved purely as minutes
                 is_active=True,
             )
             db.session.add(service)
             db.session.commit()
-            flash(f'Service {service_name} added!', 'success')
+            flash(f'Service "{service_name}" added!', 'success')
         except (ValueError, Exception) as e:
             logger.error(f"Failed to add service during onboarding: {e}")
             db.session.rollback()
-
+            flash('Failed to add service. Please check your inputs.', 'error')
+            
 
 def _save_parts(tenant_id):
     """Save parts catalog (step 2)"""
