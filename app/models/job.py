@@ -3,9 +3,9 @@ Job Model - SQLAlchemy ORM
 Work orders with services and parts, multi-tenant scoped
 """
 from typing import List, Optional, Tuple
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
-from sqlalchemy import String, Date, Numeric, Boolean, Integer, ForeignKey, and_, inspect
+from sqlalchemy import String, Date, Numeric, Boolean, Integer, ForeignKey, and_, inspect, Text, select, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship, joinedload
 from sqlalchemy.ext.hybrid import hybrid_property
 from app.extensions import db
@@ -39,6 +39,11 @@ class JobPart(db.Model):
     job_id: Mapped[int] = mapped_column(ForeignKey('job.job_id', onupdate='CASCADE'), primary_key=True)
     part_id: Mapped[int] = mapped_column(ForeignKey('part.part_id', onupdate='CASCADE'), primary_key=True)
     qty: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    
+    # Procurement Status: 'in_stock', 'needs_order', 'ordered'
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default='in_stock')
+    order_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ordered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     job: Mapped["Job"] = relationship("Job", back_populates="job_parts")
@@ -48,6 +53,51 @@ class JobPart(db.Model):
     def total_cost(self) -> Decimal:
         """Calculate total cost for this part entry"""
         return self.part.cost * Decimal(str(self.qty))
+    
+    @classmethod
+    def allocate_to_job(cls, job_id: int, part_id: int, tenant_id: int, qty_to_add: int, user_id: int) -> tuple[bool, str]:
+        from app.models.inventory import Inventory # Local import to prevent circular dependency
+        
+        if qty_to_add <= 0:
+            return False, "Quantity must be greater than zero."
+
+        job_part = db.session.get(cls, (job_id, part_id))
+        is_new = False
+        if not job_part:
+            job_part = cls(job_id=job_id, part_id=part_id, qty=0)
+            db.session.add(job_part)
+            is_new = True
+
+        # Check inventory reality
+        inventory = db.session.execute(
+            select(Inventory).where(Inventory.part_id == part_id, Inventory.tenant_id == tenant_id)
+        ).scalar_one_or_none()
+
+        job_part.qty += qty_to_add
+
+        # IF UNTRACKED OR OUT OF STOCK: Flag for ordering instead of blocking
+        if not inventory or inventory.quantity_on_hand < qty_to_add:
+            job_part.status = 'needs_order'
+            db.session.commit()
+            return True, "Part added to job but flagged for ordering (Insufficient stock)."
+
+        # IF IN STOCK: Deduct normally
+        try:
+            job_part.status = 'in_stock'
+            transaction = inventory.apply_stock_movement(
+                transaction_type='sold',
+                quantity=qty_to_add,
+                user_id=user_id,
+                reference_type='job_ticket',
+                reference_id=job_id,
+                notes=f"{'Added to' if is_new else 'Increased qty on'} Job #{job_id}"
+            )
+            db.session.add(transaction)
+            db.session.commit()
+            return True, "Part successfully allocated from stock."
+        except Exception as e:
+            db.session.rollback()
+            return False, f"Allocation failed: {str(e)}"
 
 
 class Job(db.Model, BaseModelMixin, TenantScopedMixin):

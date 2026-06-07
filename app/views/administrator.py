@@ -4,7 +4,7 @@ Contains customer management, billing management, overdue bill handling,
 organization settings, team management, service/parts catalog, and inventory
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session, g
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 import logging
 from app.services.customer_service import CustomerService
 from app.services.job_service import JobService
@@ -14,6 +14,8 @@ from app.utils.validators import sanitize_input, validate_positive_integer, vali
 from app.models.service import Service
 from app.models.part import Part
 from datetime import date
+from app.models.part import Part
+from app.services.inventory_service import InventoryService
 
 # Create blueprint
 administrator_bp = Blueprint('administrator', __name__)
@@ -1054,107 +1056,80 @@ def _handle_edit_part(tenant_id):
 @handle_database_errors
 @log_function_call
 def inventory():
-    """Inventory dashboard"""
-    redirect_response = require_admin_login()
-    if redirect_response:
-        return redirect_response
-
-    from app.models.inventory import Inventory, InventoryTransaction
-    from app.extensions import db
-
     tenant_id = session.get('current_tenant_id') or getattr(g, 'current_tenant_id', None)
     if not tenant_id:
-        flash('No organization selected', 'error')
         return redirect(url_for('main.dashboard'))
 
-    try:
-        inventory_items = db.session.execute(
-            db.select(Inventory).where(Inventory.tenant_id == tenant_id)
-        ).scalars().all()
+    page = request.args.get('page', 1, type=int)
 
-        # Get recent transactions
-        recent_transactions = db.session.execute(
-            db.select(InventoryTransaction)
-            .where(InventoryTransaction.tenant_id == tenant_id)
-            .order_by(InventoryTransaction.created_at.desc())
-            .limit(20)
-        ).scalars().all()
+    # All database logic is safely abstracted away
+    tracked_items = InventoryService.get_tracked_items(tenant_id)
+    untracked_parts = InventoryService.get_untracked_parts_paginated(tenant_id, page=page)
+    orders_by_part = InventoryService.get_active_procurement_requests()
+    recent_transactions = InventoryService.get_recent_transactions(tenant_id)
 
-        # Identify low stock items
-        low_stock = [item for item in inventory_items
-                     if item.quantity_on_hand <= item.reorder_level]
-
-        return render_template('administrator/inventory.html',
-                             inventory_items=inventory_items,
-                             recent_transactions=recent_transactions,
-                             low_stock=low_stock,
-                             total_items=len(inventory_items))
-
-    except Exception as e:
-        logger.error(f"Failed to load inventory: {e}")
-        flash('Failed to load inventory', 'error')
-        return render_template('administrator/inventory.html',
-                             inventory_items=[],
-                             recent_transactions=[],
-                             low_stock=[],
-                             total_items=0)
+    return render_template('administrator/inventory.html',
+                         tracked_items=tracked_items,
+                         untracked_parts=untracked_parts,
+                         orders_by_part=orders_by_part,
+                         recent_transactions=recent_transactions,
+                         category_config=InventoryService.get_category_config(),)
 
 
-@administrator_bp.route('/inventory/adjust', methods=['POST'])
+@administrator_bp.route('/inventory/submit_order', methods=['POST'])
 @handle_database_errors
-def inventory_adjust():
-    """Adjust inventory stock level"""
-    redirect_response = require_admin_login()
-    if redirect_response:
-        return redirect_response
+def submit_order_note():
+    job_id = request.form.get('job_id', type=int)
+    part_id = request.form.get('part_id', type=int)
+    notes = sanitize_input(request.form.get('order_notes'))
 
-    from app.models.inventory import Inventory, InventoryTransaction
-    from app.extensions import db
-
-    tenant_id = session.get('current_tenant_id') or getattr(g, 'current_tenant_id', None)
-    if not tenant_id:
-        flash('No organization selected', 'error')
-        return redirect(url_for('main.dashboard'))
-
-    inventory_id = request.form.get('inventory_id', type=int)
-    adjustment = request.form.get('quantity', type=int)
-    transaction_type = sanitize_input(request.form.get('transaction_type', 'adjustment'))
-    notes = sanitize_input(request.form.get('notes', ''))
-
-    if not inventory_id or adjustment is None:
-        flash('Invalid adjustment data', 'error')
+    if not notes:
+        flash('Tracking note is required.', 'error')
         return redirect(url_for('administrator.inventory'))
 
-    try:
-        item = db.session.get(Inventory, inventory_id)
-        if not item or item.tenant_id != tenant_id:
-            flash('Inventory item not found', 'error')
-            return redirect(url_for('administrator.inventory'))
-
-        # Update quantity
-        item.quantity_on_hand += adjustment
-
-        # Record transaction
-        transaction = InventoryTransaction(
-            tenant_id=tenant_id,
-            inventory_id=inventory_id,
-            transaction_type=transaction_type,
-            quantity=adjustment,
-            performed_by=session.get('user_id'),
-            notes=notes,
-        )
-        db.session.add(transaction)
-        db.session.commit()
-
-        flash(f'Inventory adjusted by {adjustment:+d} units', 'success')
-
-    except Exception as e:
-        logger.error(f"Failed to adjust inventory: {e}")
-        db.session.rollback()
-        flash('Failed to adjust inventory', 'error')
+    success = InventoryService.fulfill_order_request(job_id, part_id, notes)
+    
+    if success:
+        flash('Part marked as ordered. Notes attached.', 'success')
+    else:
+        flash('Could not find the requested job part.', 'error')
 
     return redirect(url_for('administrator.inventory'))
 
+
+@administrator_bp.route('/inventory/edit_or_track', methods=['POST'])
+@handle_database_errors
+def edit_or_track_part():
+    tenant_id = session.get('current_tenant_id')
+    part_id = request.form.get('part_id', type=int)
+    location = sanitize_input(request.form.get('location', ''))
+    stock = request.form.get('quantity_on_hand', type=int, default=0)
+    reorder = request.form.get('reorder_level', type=int, default=0)
+
+    InventoryService.setup_or_update_tracking(tenant_id, part_id, location, stock, reorder)
+    
+    flash('Part details and tracking updated.', 'success')
+    return redirect(url_for('administrator.inventory'))
+
+
+@administrator_bp.route('/inventory/add-part', methods=['POST'])
+@handle_database_errors
+@log_function_call
+def add_new_part():
+    tenant_id = session.get('current_tenant_id') or getattr(g, 'current_tenant_id', None)
+    if not tenant_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    
+    try:
+        # Pass the payload directly to the service layer
+        InventoryService.create_part_with_tracking(tenant_id, data)
+        return jsonify({'status': 'success'}), 201
+        
+    except Exception as e:
+        # Catch errors raised by the service layer (e.g. database constraints)
+        return jsonify({'error': str(e)}), 400
 
 # =============================================================================
 # SUBSCRIPTION MANAGEMENT

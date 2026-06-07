@@ -29,7 +29,6 @@ class Inventory(db.Model, BaseModelMixin, TimestampMixin):
     )
     quantity_on_hand: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     reorder_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    reorder_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Relationships

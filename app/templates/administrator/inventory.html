@@ -1,5 +1,5 @@
 {% extends "base/layout_with_sidebar.html" %}
-{% block title %}Inventory Management - Administrator Portal{% endblock %}
+{% block title %}Inventory Management and Track Parts- Administrator Portal{% endblock %}
 
 {% block breadcrumb_items %}
 <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
@@ -13,73 +13,75 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <h1 class="h3 mb-0 d-flex align-items-center gap-2">
-                        <i class="ti ti-building-warehouse text-primary"></i>
-                        Inventory Management
+                        <i class="ti ti-building-warehouse text-primary"></i> Inventory Management and Track Parts
                     </h1>
-                    <p class="text-muted mb-0">Track stock levels and inventory transactions</p>
+                    <p class="text-muted mb-2">Track stock levels, track parts and inventory transactions</p>
+                    
+                    <div class="d-flex gap-2 align-items-center mt-2 flex-wrap">
+                        <span class="text-muted small fw-bold"><i class="ti ti-tags"></i> CATEGORIES:</span>
+                        {% for cat, style in category_config.items() %}
+                            <span class="badge {{ style }}">{{ cat }}</span>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header"
-                    style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white;">
-                    <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
-                        <i class="ti ti-package"></i>
-                        Stock Levels
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 text-white">
+                        <i class="ti ti-package"></i> Tracked Stock Levels
                     </h5>
+                    
+                    <button class="btn btn-success btn-sm text-primary fw-bold ms-auto" onclick="openAddPartModal()">
+                        <i class="ti ti-plus"></i> Add New Part
+                    </button>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-vcenter card-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>Part Name</th>
+                                    <th>Category</th>
                                     <th>On Hand</th>
-                                    <th>Reorder Level</th>
                                     <th>Location</th>
-                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in inventory_items|default([]) %}
-                                {% set needs_reorder = item.quantity_on_hand|default(0)|int <= item.reorder_level|default(0)|int %} 
-                                <tr class="{% if needs_reorder %}table-warning{% endif %}">
+                                {% for item in tracked_items %}
+                                <tr>
+                                    <td><strong>{{ item.part.part_name }}</strong></td>
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <i class="ti ti-puzzle text-{% if needs_reorder %}warning{% else %}primary{% endif %} me-2"></i>
-                                            <strong>{{ item.part_name|default(item.name) }}</strong>
+                                        <span class="badge {{ category_config.get(item.part.category, 'bg-secondary text-white') }}">
+                                            {{ item.part.category or 'General' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold {% if item.quantity_on_hand <= item.reorder_level %}text-warning{% else %}text-success{% endif %}">
+                                                {{ item.quantity_on_hand }}
+                                            </span>
+                                            
+                                            {% if item.quantity_on_hand <= item.reorder_level %}
+                                                <a href="javascript:void(0)" 
+                                                onclick="openReorderWarningModal('{{ item.part.part_name|escape }}', {{ item.quantity_on_hand }}, {{ item.reorder_level }})" 
+                                                class="text-warning text-decoration-none" 
+                                                title="Stock Low - Action Required">
+                                                    <i class="ti ti-alert-triangle fs-5 cursor-pointer"></i>
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </td>
+                                    <td>{{ item.location or 'N/A' }}</td>
                                     <td>
-                                        <span class="fw-bold {% if needs_reorder %}text-danger{% else %}text-success{% endif %}">
-                                            {{ item.quantity_on_hand|default(0) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ item.reorder_level|default(0) }}</td>
-                                    <td>{{ item.location|default('N/A') }}</td>
-                                    <td>
-                                        {% if needs_reorder %}
-                                        <span class="text-white badge bg-danger">
-                                            <i class="ti ti-alert-triangle me-1"></i>
-                                            Reorder Needed
-                                        </span>
-                                        {% else %}
-                                        <span class="text-white badge bg-success">
-                                            <i class="ti ti-circle-check me-1"></i>
-                                            In Stock
-                                        </span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        <i class="ti ti-package mb-2 d-block mx-auto" style="font-size: 48px;"></i>
-                                        No inventory data available
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="openEditModal({{ item.part.part_id }}, '{{ item.part.part_name }}', {{ item.quantity_on_hand }}, {{ item.reorder_level }}, '{{ item.location }}')">
+                                            <i class="ti ti-pencil"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -91,16 +93,75 @@
         </div>
     </div>
 
+    <div class="row mb-4" id="untracked-catalog">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 text-white">
+                        <i class="ti ti-box-off"></i> Untracked Parts Catalog
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-vcenter card-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Part Name</th>
+                                <th>Category</th>
+                                <th>Procurement Alerts</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for part in untracked_parts.items %}
+                            <tr>
+                                <td><strong>{{ part.part_name }}</strong></td>
+                                <td>
+                                    <span class="badge {{ category_config.get(part.category, 'bg-secondary text-white') }}">
+                                        {{ part.category or 'General' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% for order in orders_by_part.get(part.part_id, []) %}
+                                        {% if order.status == 'needs_order' %}
+                                            <button class="btn btn-sm btn-danger mb-1" onclick="openOrderModal({{ order.job_id }}, {{ part.part_id }}, '{{ part.part_name }}')">
+                                                <i class="ti ti-alert-triangle"></i> Order Needed (Job #{{ order.job_id }})
+                                            </button>
+                                        {% elif order.status == 'ordered' %}
+                                            <button class="btn btn-sm btn-info mb-1" onclick="openNotesModal('{{ order.order_notes|escape }}', {{ order.job_id }}, '{{ order.ordered_at.isoformat() if order.ordered_at else '' }}')">
+                                                <i class="ti ti-message-circle"></i> Ordered (Job #{{ order.job_id }})
+                                            </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted"><small>No active requests</small></span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openEditModal({{ part.part_id }}, '{{ part.part_name }}', 0, 0, '')">
+                                        <i class="ti ti-pencil"></i> Setup Tracking
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+    
+
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header" style="background: var(--info); color: white;">
+                <div class="card-header bg-info" style="background: linear-gradient(135deg, var(--info) 0%, #17a2b8 100%); color: white;">
                     <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color: white;">
                         <i class="ti ti-history"></i>
                         Transaction History
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-vcenter card-table">
                             <thead class="table-light">
@@ -114,7 +175,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for txn in recent_transactions|default([]) %}
+                                {% for txn in recent_transactions %}
                                 <tr>
                                     <td>
                                         <span class="d-flex align-items-center gap-1">
@@ -123,29 +184,26 @@
                                         </span>
                                     </td>
                                     <td>
-                                        {% if txn.type == 'in' or txn.type == 'received' %}
+                                        {% if txn.transaction_type == 'received' %}
                                         <span class="text-white badge bg-success">
-                                            <i class="ti ti-arrow-down"></i>
-                                            Received
+                                            <i class="ti ti-arrow-down"></i> Received
                                         </span>
-                                        {% elif txn.type == 'out' or txn.type == 'used' %}
-                                        <span class="text-white badge bg-warning text-dark">
-                                            <i class="ti ti-arrow-up"></i>
-                                            Used
+                                        {% elif txn.transaction_type == 'sold' or txn.transaction_type == 'used' %}
+                                        <span class="text-dark badge bg-warning">
+                                            <i class="ti ti-arrow-up"></i> Used
                                         </span>
-                                        {% elif txn.type == 'adjustment' %}
+                                        {% elif txn.transaction_type == 'adjusted' or txn.transaction_type == 'returned' %}
                                         <span class="text-white badge bg-info">
-                                            <i class="ti ti-edit"></i>
-                                            Adjustment
+                                            <i class="ti ti-edit"></i> {{ txn.transaction_type|title }}
                                         </span>
                                         {% else %}
-                                        <span class="text-white badge bg-light">{{ txn.type|title }}</span>
+                                        <span class="text-dark badge bg-light">{{ txn.transaction_type|title }}</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ txn.part_name|default('N/A') }}</td>
+                                    <td>{{ txn.inventory.part.part_name if txn.inventory and txn.inventory.part else 'N/A' }}</td>
                                     <td>
-                                        <span class="fw-bold {% if txn.type == 'in' or txn.type == 'received' %}text-success{% else %}text-danger{% endif %}">
-                                            {% if txn.type == 'in' or txn.type == 'received' %}+{% else %}-{% endif %}{{ txn.quantity|default(0) }}
+                                        <span class="fw-bold {% if txn.transaction_type == 'received' or txn.transaction_type == 'returned' %}text-success{% else %}text-danger{% endif %}">
+                                            {% if txn.transaction_type == 'received' or txn.transaction_type == 'returned' %}+{% else %}-{% endif %}{{ txn.quantity }}
                                         </span>
                                     </td>
                                     <td>{{ txn.performed_by|default('System') }}</td>
@@ -167,4 +225,300 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="addPartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="ti ti-cube-plus text-primary"></i> Add Part & Setup Tracking
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addPartForm" onsubmit="submitNewPart(event)">
+                <div class="modal-body">
+                    <h6 class="text-primary border-bottom pb-2 mb-3">1. Part Information</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Part Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newPartName" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">SKU / Part Number</label>
+                            <input type="text" class="form-control" id="newSku">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="newCategory" required>
+                                <option value="" disabled selected>Select Category...</option>
+                                {% for cat in category_config.keys() %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Cost ($) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="newCost" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Supplier / Vendor</label>
+                            <input type="text" class="form-control" id="newSupplier">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary border-bottom pb-2 mb-3">2. Initial Inventory Setup</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Initial Stock on Hand <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="newStock" value="0" min="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Reorder Alert Level <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="newReorder" value="0" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Storage Location</label>
+                        <input type="text" class="form-control" id="newLocation" placeholder="e.g., Aisle 3, Bin B">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitPart">
+                        <i class="ti ti-device-floppy"></i> Save Part & Inventory
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('administrator.submit_order_note') }}" method="POST" class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Fulfill Part Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This part is required for Job #<span id="modalJobIdText"></span>. Please place the order with your supplier.</p>
+                <input type="hidden" name="job_id" id="modalJobId">
+                <input type="hidden" name="part_id" id="modalPartId">
+                <div class="mb-3">
+                    <label class="form-label">Tracking / Supplier Notes</label>
+                    <textarea name="order_notes" class="form-control" rows="3" required placeholder="e.g., Ordered from AutoZone, ETA Tuesday. Tracking #12345"></textarea>
+                    <small class="text-muted">Adding a note will convert the warning badge to a chat viewable by mechanics.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-danger">Mark as Ordered</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Procurement Notes (Job #<span id="viewJobId"></span>)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-1">
+                    <i class="ti ti-info-circle"></i> <span id="viewNotesContent"></span>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted"><i class="ti ti-clock"></i> <span id="viewNotesTime"></span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('administrator.edit_or_track_part') }}" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Inventory Tracking Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Part Name</label>
+                    <input type="text" class="form-control bg-light" id="editPartName" readonly>
+                </div>
+                <input type="hidden" name="part_id" id="editPartId">
+                <div class="mb-3">
+                    <label class="form-label">Initial Stock Level</label>
+                    <input type="number" name="quantity_on_hand" id="editStock" class="form-control" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Reorder Level Warning</label>
+                    <input type="number" name="reorder_level" id="editReorder" class="form-control" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Storage Location</label>
+                    <input type="text" name="location" id="editLocation" class="form-control" placeholder="e.g., Aisle 3, Bin B">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="reorderWarningModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning-subtle">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-dark">
+                    <i class="ti ti-alert-triangle text-warning"></i> Low Stock Warning
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">The stock level for <strong id="warnPartName"></strong> has hit its reorder threshold.</p>
+                <ul class="mb-4">
+                    <li><strong>Current On Hand:</strong> <span id="warnOnHand" class="text-danger fw-bold"></span></li>
+                    <li><strong>Reorder Level:</strong> <span id="warnReorder"></span></li>
+                </ul>
+                <div class="alert alert-danger mb-0">
+                    <i class="ti ti-info-circle me-1"></i> <strong>Action Required:</strong> Please order more of this part immediately. If the quantity hits zero, the system will automatically remove it from Tracked Stock and return it to the Untracked Catalog.
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Check if the URL contains a pagination parameter (e.g., ?page=2)
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('page')) {
+            const catalogSection = document.getElementById('untracked-catalog');
+            if (catalogSection) {
+                // Smoothly scroll to the table, leaving a little breathing room at the top
+                setTimeout(() => {
+                    const y = catalogSection.getBoundingClientRect().top + window.scrollY - 20;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }, 150); // Slight delay ensures the page is fully rendered before scrolling
+            }
+        }
+    });
+
+    function openAddPartModal() {
+        document.getElementById('addPartForm').reset();
+        new bootstrap.Modal(document.getElementById('addPartModal')).show();
+    }
+
+    async function submitNewPart(event) {
+        event.preventDefault();
+        const btn = document.getElementById('btnSubmitPart');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+        const payload = {
+            part_name: document.getElementById('newPartName').value,
+            sku: document.getElementById('newSku').value,
+            category: document.getElementById('newCategory').value,
+            cost: parseFloat(document.getElementById('newCost').value),
+            supplier: document.getElementById('newSupplier').value,
+            stock: parseInt(document.getElementById('newStock').value, 10),
+            reorder: parseInt(document.getElementById('newReorder').value, 10),
+            location: document.getElementById('newLocation').value
+        };
+
+        try {
+            const response = await fetch('/administrator/inventory/add-part', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add your CSRF token header here if required by your app
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert('Error: ' + (data.error || 'Failed to save part.'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Part & Inventory';
+            }
+        } catch (error) {
+            console.error('Submission failed:', error);
+            alert('Network error occurred.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Part & Inventory';
+        }
+    }
+
+    // Add this helper function
+    function timeAgo(dateString) {
+        if (!dateString) return 'Time unknown';
+        
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.round((now - date) / 1000);
+        const minutes = Math.round(seconds / 60);
+        const hours = Math.round(minutes / 60);
+        const days = Math.round(hours / 24);
+
+        if (seconds < 60) return 'Just now';
+        if (minutes < 60) return minutes + ' minute' + (minutes > 1 ? 's' : '') + ' ago';
+        if (hours < 24) return hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return days + ' days ago';
+        
+        // Fallback to standard date if older than a week
+        return date.toLocaleDateString(); 
+    }
+
+    function openReorderWarningModal(partName, onHand, reorderLevel) {
+    document.getElementById('warnPartName').innerText = partName;
+    document.getElementById('warnOnHand').innerText = onHand;
+    document.getElementById('warnReorder').innerText = reorderLevel;
+    
+    new bootstrap.Modal(document.getElementById('reorderWarningModal')).show();
+    }
+
+    // Update your existing function
+    function openNotesModal(notes, jobId, orderedAt) {
+        document.getElementById('viewJobId').innerText = jobId;
+        document.getElementById('viewNotesContent').innerText = notes;
+        document.getElementById('viewNotesTime').innerText = timeAgo(orderedAt);
+        
+        new bootstrap.Modal(document.getElementById('notesModal')).show();
+    }
+
+    function openOrderModal(jobId, partId, partName) {
+        document.getElementById('modalJobId').value = jobId;
+        document.getElementById('modalJobIdText').innerText = jobId;
+        document.getElementById('modalPartId').value = partId;
+        new bootstrap.Modal(document.getElementById('orderModal')).show();
+    }
+
+    function openEditModal(partId, partName, stock, reorder, location) {
+        document.getElementById('editPartId').value = partId;
+        document.getElementById('editPartName').value = partName;
+        document.getElementById('editStock').value = stock;
+        document.getElementById('editReorder').value = reorder;
+        document.getElementById('editLocation').value = location;
+        new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+</script>
 {% endblock %}
